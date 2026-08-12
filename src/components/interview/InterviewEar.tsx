@@ -7,15 +7,14 @@ import {
   Check, 
   Trash2, 
   Volume2, 
-  Zap, 
   Bot, 
-  ArrowRight,
   Radio
 } from 'lucide-react';
 import { AppSettings, SpeechTranscript } from '../../types';
 import { LLMClient } from '../../services/ai/llmClient';
 import { speechService } from '../../services/audio/speechService';
 import { MarkdownRenderer } from '../common/MarkdownRenderer';
+import { CompanionBridge } from '../../services/companion/companionBridge';
 
 interface InterviewEarProps {
   settings: AppSettings;
@@ -29,7 +28,9 @@ export const InterviewEar: React.FC<InterviewEarProps> = ({
   onOpenSettings,
 }) => {
   const [isListening, setIsListening] = useState(false);
+  const [captureMode, setCaptureMode] = useState<'dual' | 'mic' | 'system'>('dual');
   const [interimText, setInterimText] = useState('');
+  const [audioLevel, setAudioLevel] = useState<number>(0);
   const [transcripts, setTranscripts] = useState<SpeechTranscript[]>([]);
   const [activeGeneratingId, setActiveGeneratingId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -40,16 +41,30 @@ export const InterviewEar: React.FC<InterviewEarProps> = ({
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [transcripts, interimText]);
 
+  const handleModeChange = (mode: 'dual' | 'mic' | 'system') => {
+    setCaptureMode(mode);
+    speechService.setCaptureMode(mode);
+    if (isListening) {
+      speechService.stop();
+      setTimeout(toggleListening, 150);
+    }
+  };
+
   const toggleListening = () => {
     if (isListening) {
       speechService.stop();
       setIsListening(false);
+      setAudioLevel(0);
       setStatusMessage('Listening paused.');
     } else {
+      speechService.setCaptureMode(captureMode);
       setStatusMessage('Listening to microphone & speaker audio...');
       speechService.start({
         onInterimText: (text) => {
           setInterimText(text);
+          if (text) {
+            CompanionBridge.broadcastTranscript(text);
+          }
         },
         onFinalText: (text) => {
           setInterimText('');
@@ -64,6 +79,7 @@ export const InterviewEar: React.FC<InterviewEarProps> = ({
           };
 
           setTranscripts(prev => [...prev, newTranscript]);
+          CompanionBridge.broadcastTranscript(text);
 
           // If auto-suggest is enabled and it looks like a question or key discussion point
           if (settings.autoSuggestAudio && isLikelyQuestion(text)) {
@@ -75,6 +91,9 @@ export const InterviewEar: React.FC<InterviewEarProps> = ({
         },
         onStateChange: (state) => {
           setIsListening(state);
+        },
+        onAudioLevel: (lvl) => {
+          setAudioLevel(lvl);
         }
       });
       setIsListening(true);
@@ -83,7 +102,12 @@ export const InterviewEar: React.FC<InterviewEarProps> = ({
 
   const isLikelyQuestion = (text: string): boolean => {
     const lower = text.toLowerCase();
-    const questionWords = ['what', 'why', 'how', 'when', 'where', 'who', 'which', 'can you', 'could you', 'explain', 'describe', 'tell me about', 'design', 'implement', 'time complexity', 'space complexity', 'difference between'];
+    const questionWords = [
+      'what', 'why', 'how', 'when', 'where', 'who', 'which', 
+      'can you', 'could you', 'explain', 'describe', 'tell me about', 
+      'design', 'implement', 'time complexity', 'space complexity', 
+      'difference between', 'have you used', 'walk me through'
+    ];
     return lower.includes('?') || questionWords.some(w => lower.startsWith(w) || lower.includes(` ${w} `));
   };
 
@@ -101,7 +125,7 @@ export const InterviewEar: React.FC<InterviewEarProps> = ({
 
     try {
       let accumulated = '';
-      const prompt = `The interviewer just asked/stated:\n"${text}"\n\nProvide the optimal, crisp, professional response bullet points (or STAR method if behavioral, or algorithm approach if technical). Sound confident and concise for verbal delivery.`;
+      const prompt = `The interviewer just asked:\n"${text}"\n\nProvide the optimal, crisp, professional response bullet points (or STAR method if behavioral, or algorithm approach if technical). Keep it concise for verbal delivery.`;
 
       await llmClient.generate({
         prompt,
@@ -110,8 +134,10 @@ export const InterviewEar: React.FC<InterviewEarProps> = ({
           setTranscripts(prev =>
             prev.map(t => t.id === id ? { ...t, aiResponse: accumulated } : t)
           );
+          CompanionBridge.broadcastSolution(accumulated);
         }
       });
+      CompanionBridge.broadcastSolution(accumulated);
     } catch (err: any) {
       setTranscripts(prev =>
         prev.map(t =>
@@ -164,16 +190,71 @@ export const InterviewEar: React.FC<InterviewEarProps> = ({
             )}
           </button>
 
+          {/* Real Audio Waveform / VU Meter */}
           {isListening && (
-            <div className="flex items-center gap-1">
-              <span className="w-1.5 h-3 bg-cyan-400 rounded-full animate-pulse" />
-              <span className="w-1.5 h-5 bg-cyan-400 rounded-full animate-pulse delay-75" />
-              <span className="w-1.5 h-2.5 bg-cyan-400 rounded-full animate-pulse delay-150" />
-            </div>
+            <>
+              <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-black/50 border border-white/10" title={`Mic Level: ${audioLevel}% (Noise baseline calibrated)`}>
+                <span 
+                  className="w-1 bg-cyan-400 rounded-full transition-all duration-75" 
+                  style={{ height: `${Math.max(4, Math.min(18, (audioLevel / 100) * 18))}px` }} 
+                />
+                <span 
+                  className="w-1 bg-cyan-300 rounded-full transition-all duration-75" 
+                  style={{ height: `${Math.max(4, Math.min(22, (audioLevel / 80) * 22))}px` }} 
+                />
+                <span 
+                  className="w-1 bg-cyan-400 rounded-full transition-all duration-75" 
+                  style={{ height: `${Math.max(4, Math.min(18, (audioLevel / 100) * 18))}px` }} 
+                />
+                <span className="text-[10px] font-mono text-cyan-300 ml-1">
+                  {audioLevel > 5 ? `${audioLevel}%` : 'Silent'}
+                </span>
+              </div>
+
+              <button
+                onClick={() => speechService.flushAndTranscribe()}
+                className="px-2 py-0.5 rounded-full bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 text-[10px] font-bold flex items-center gap-1 transition-colors"
+                title="Immediately transcribe what was just said without waiting for silence"
+              >
+                <Sparkles className="w-2.5 h-2.5" />
+                <span>Transcribe Now</span>
+              </button>
+            </>
           )}
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Audio Source Mode Switcher */}
+          <div className="flex items-center gap-0.5 bg-black/40 border border-white/10 rounded-lg p-0.5 text-[10px]">
+            <button
+              onClick={() => handleModeChange('dual')}
+              className={`px-1.5 py-0.5 rounded font-semibold transition-colors ${
+                captureMode === 'dual' ? 'bg-cyan-500/30 text-cyan-300' : 'text-slate-400 hover:text-slate-200'
+              }`}
+              title="Dual Mix: Listens to both your Microphone AND Interviewer Earphone/Speaker audio"
+            >
+              Dual Mix
+            </button>
+            <button
+              onClick={() => handleModeChange('mic')}
+              className={`px-1.5 py-0.5 rounded font-semibold transition-colors ${
+                captureMode === 'mic' ? 'bg-cyan-500/30 text-cyan-300' : 'text-slate-400 hover:text-slate-200'
+              }`}
+              title="Microphone Only"
+            >
+              Mic
+            </button>
+            <button
+              onClick={() => handleModeChange('system')}
+              className={`px-1.5 py-0.5 rounded font-semibold transition-colors ${
+                captureMode === 'system' ? 'bg-cyan-500/30 text-cyan-300' : 'text-slate-400 hover:text-slate-200'
+              }`}
+              title="Earphones / System Audio Only"
+            >
+              Earphones
+            </button>
+          </div>
+
           <button
             onClick={() => setTranscripts([])}
             className="p-1 hover:bg-white/10 rounded text-slate-400 hover:text-rose-400 transition-colors"
@@ -194,7 +275,7 @@ export const InterviewEar: React.FC<InterviewEarProps> = ({
             <div>
               <h4 className="font-semibold text-slate-200 text-sm">Real-time Interview Ear Ready</h4>
               <p className="text-xs text-slate-400 mt-1 max-w-xs leading-relaxed">
-                Click <strong>Start Ear</strong> or press <code className="text-cyan-300">Ctrl+Shift+A</code>. Nexora will listen to your meeting/interview, transcribe spoken questions, and generate live answers on the fly.
+                Click <strong>Start Ear</strong> or press <code className="text-cyan-300">Ctrl+Shift+A</code>. Nexora will capture speaker audio from your mic, transcribe questions via Whisper, and generate answers automatically.
               </p>
             </div>
           </div>

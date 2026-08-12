@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, globalShortcut, desktopCapturer, screen, clipboard, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, globalShortcut, desktopCapturer, screen, clipboard, shell, session } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { applyStealthAffinity } from './stealthProtection.js';
@@ -7,9 +7,11 @@ import { CompanionServer } from './companionServer.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Flags for cross-platform and Linux Wayland/X11 screen capture
-app.commandLine.appendSwitch('enable-features', 'WebRTCPipeWireCapturer');
+// Flags for cross-platform system audio loopback & screen capture (Windows, macOS, Linux)
+app.commandLine.appendSwitch('enable-features', 'WebRTCPipeWireCapturer,PulseaudioLoopbackForCast');
 app.commandLine.appendSwitch('enable-webrtc-pipewire-capturer');
+app.commandLine.appendSwitch('enable-usermedia-screen-capturing');
+app.commandLine.appendSwitch('allow-http-screen-capture');
 app.commandLine.appendSwitch('auto-select-desktop-capture-source', 'Entire screen');
 
 let mainWindow: BrowserWindow | null = null;
@@ -273,13 +275,55 @@ function setupIpcHandlers() {
     };
   });
 
-  ipcMain.on('broadcast-to-companion', (_event, type, data) => {
-    companionServer?.broadcast(type, data);
+  // Cross-platform System Audio Loopback IPC
+  ipcMain.handle('link-system-audio-output', async () => {
+    if (process.platform === 'linux') {
+      try {
+        const { exec } = await import('child_process');
+        exec('pw-link -o', (err, stdout) => {
+          if (err || !stdout) return;
+          const monitors = stdout.split('\n').filter(l => l.includes(':monitor_'));
+          exec('pw-link -i', (err2, stdout2) => {
+            if (err2 || !stdout2) return;
+            const chromiumInputs = stdout2.split('\n').filter(l => 
+              l.toLowerCase().includes('chromium:input_') || 
+              l.toLowerCase().includes('nexora:input_') ||
+              l.toLowerCase().includes('electron:input_')
+            );
+            for (const mon of monitors) {
+              for (const inp of chromiumInputs) {
+                if (
+                  (mon.includes('_FL') && inp.includes('_FL')) || 
+                  (mon.includes('_FR') && inp.includes('_FR')) || 
+                  (mon.includes('_MONO') && inp.includes('_MONO')) ||
+                  (!mon.includes('_') && !inp.includes('_'))
+                ) {
+                  exec(`pw-link "${mon.trim()}" "${inp.trim()}"`, () => {});
+                }
+              }
+            }
+          });
+        });
+        return true;
+      } catch (e) {
+        console.warn('System audio link warning:', e);
+      }
+    }
+    return true;
   });
 }
 
 // App lifecycle
 app.whenReady().then(async () => {
+  // Setup Cross-Platform Screen & Audio Loopback handler for Windows, macOS, and Linux
+  session.defaultSession.setDisplayMediaRequestHandler((_request, callback) => {
+    desktopCapturer.getSources({ types: ['screen'] }).then((sources) => {
+      callback({ video: sources[0], audio: 'loopback' });
+    }).catch(() => {
+      callback({ video: undefined, audio: 'loopback' });
+    });
+  });
+
   createMainWindow();
   registerGlobalShortcuts();
   setupIpcHandlers();

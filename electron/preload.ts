@@ -38,6 +38,9 @@ export interface ElectronAPI {
   broadcastToCompanion: (type: string, data: any) => void;
   onCompanionAction: (callback: (action: string, payload?: any) => void) => () => void;
 
+  // Audio routing
+  linkSystemAudioOutput: () => Promise<boolean>;
+
   // Event listeners
   onTriggerSnip: (callback: () => void) => () => void;
   onTriggerFullscreenCapture: (callback: () => void) => () => void;
@@ -71,6 +74,8 @@ const api: ElectronAPI = {
       ipcRenderer.removeListener('companion-action-received', subscription);
     };
   },
+  
+  linkSystemAudioOutput: () => ipcRenderer.invoke('link-system-audio-output'),
   
   onTriggerSnip: (callback) => {
     const subscription = () => callback();
