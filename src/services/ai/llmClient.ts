@@ -116,11 +116,14 @@ export class LLMClient {
     currentParts.push({ text: prompt || 'Analyze this problem/code and provide the optimal solution.' });
     contents.push({ role: 'user', parts: currentParts });
 
-    let effectiveModel = model;
-    if (effectiveModel === 'gemini-1.5-pro') effectiveModel = 'gemini-1.5-pro-latest';
-    if (effectiveModel === 'gemini-2.5-flash') effectiveModel = 'gemini-2.0-flash';
-
-    let endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${effectiveModel}:streamGenerateContent?alt=sse&key=${apiKey}`;
+    // Build candidate list prioritizing user selection, then latest 2.5 and 1.5 versions
+    const candidateModels: string[] = [];
+    if (model) candidateModels.push(model);
+    if (!candidateModels.includes('gemini-2.5-flash')) candidateModels.push('gemini-2.5-flash');
+    if (!candidateModels.includes('gemini-2.5-pro')) candidateModels.push('gemini-2.5-pro');
+    if (!candidateModels.includes('gemini-1.5-flash-latest')) candidateModels.push('gemini-1.5-flash-latest');
+    if (!candidateModels.includes('gemini-1.5-flash')) candidateModels.push('gemini-1.5-flash');
+    if (!candidateModels.includes('gemini-1.5-pro-latest')) candidateModels.push('gemini-1.5-pro-latest');
 
     const body = {
       contents,
@@ -133,31 +136,68 @@ export class LLMClient {
       }
     };
 
-    let response = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
+    let response: Response | null = null;
+    let lastErrorMsg = '';
 
-    // Auto-fallback to gemini-2.0-flash if model returned 404
-    if (!response.ok && response.status === 404 && effectiveModel !== 'gemini-2.0-flash') {
-      console.warn(`[Gemini] ${effectiveModel} returned 404, falling back to gemini-2.0-flash...`);
-      endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse&key=${apiKey}`;
-      response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
+    for (const cand of candidateModels) {
+      try {
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${cand}:streamGenerateContent?alt=sse&key=${apiKey}`;
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+
+        if (res.ok) {
+          response = res;
+          break;
+        } else {
+          const errText = await res.text();
+          let parsedMsg = errText;
+          try {
+            const errJson = JSON.parse(errText);
+            parsedMsg = errJson.error?.message || errText;
+          } catch (_) {}
+          lastErrorMsg = parsedMsg;
+          console.warn(`[Gemini] Candidate ${cand} failed (${res.status}): ${parsedMsg}. Trying next candidate...`);
+        }
+      } catch (err: any) {
+        lastErrorMsg = err.message || 'Network error';
+      }
     }
 
-    if (!response.ok) {
-      const errText = await response.text();
-      let msg = errText;
+    // If all candidates failed, dynamically query ListModels to find valid active models
+    if (!response || !response.ok) {
       try {
-        const errJson = JSON.parse(errText);
-        msg = errJson.error?.message || errText;
-      } catch (_) {}
-      throw new Error(`Gemini API Error (${response.status}): ${msg}`);
+        console.log('[Gemini] Querying ListModels to discover available models for this key...');
+        const listRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+        if (listRes.ok) {
+          const listData = await listRes.json();
+          const validModels: string[] = (listData.models || [])
+            .filter((m: any) => m.supportedGenerationMethods?.includes('generateContent'))
+            .map((m: any) => m.name.replace('models/', ''));
+
+          console.log('[Gemini] Discovered models on API Key:', validModels);
+          for (const vm of validModels) {
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${vm}:streamGenerateContent?alt=sse&key=${apiKey}`;
+            const res = await fetch(endpoint, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(body),
+            });
+            if (res.ok) {
+              response = res;
+              break;
+            }
+          }
+        }
+      } catch (discoveryErr) {
+        console.warn('[Gemini] Model discovery failed:', discoveryErr);
+      }
+    }
+
+    if (!response || !response.ok) {
+      throw new Error(`Gemini API Error: ${lastErrorMsg || 'Could not find an available Gemini model for this API key.'}`);
     }
 
     let fullText = '';

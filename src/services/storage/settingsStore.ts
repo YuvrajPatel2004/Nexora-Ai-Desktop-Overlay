@@ -3,27 +3,27 @@ import { AppSettings, ModelInfo } from '../../types';
 export const AVAILABLE_MODELS: ModelInfo[] = [
   // Google Gemini
   {
-    id: 'gemini-2.0-flash',
-    name: 'Gemini 2.0 Flash',
+    id: 'gemini-2.5-flash',
+    name: 'Gemini 2.5 Flash',
     provider: 'gemini',
     contextWindow: '1M tokens',
     isVision: true,
     isFast: true,
     recommended: true,
-    description: 'Fastest official multimodal model with native screen & code reasoning'
+    description: 'Latest flagship multimodal model with ultra-fast screen reasoning'
   },
   {
-    id: 'gemini-2.0-flash-thinking-exp-01-21',
-    name: 'Gemini 2.0 Flash Thinking',
+    id: 'gemini-2.5-pro',
+    name: 'Gemini 2.5 Pro',
     provider: 'gemini',
-    contextWindow: '1M tokens',
+    contextWindow: '2M tokens',
     isVision: true,
     isFast: false,
     recommended: true,
-    description: 'Deep chain-of-thought reasoning for complex algorithms & system design'
+    description: 'Deep reasoning model for competitive programming & architecture'
   },
   {
-    id: 'gemini-1.5-flash',
+    id: 'gemini-1.5-flash-latest',
     name: 'Gemini 1.5 Flash',
     provider: 'gemini',
     contextWindow: '1M tokens',
@@ -182,7 +182,7 @@ const DEFAULT_SETTINGS: AppSettings = {
     custom: '',
   },
   selectedProvider: 'gemini',
-  selectedModel: 'gemini-2.0-flash',
+  selectedModel: 'gemini-2.5-flash',
   ollamaEndpoint: 'http://localhost:11434',
   ollamaModel: 'llama3.2-vision:latest',
   customEndpoint: 'https://api.openai.com/v1',
