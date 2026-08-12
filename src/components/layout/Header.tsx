@@ -11,7 +11,7 @@ import {
   Mic, 
   Crop, 
   Tv, 
-  ChevronDown
+  BookOpen
 } from 'lucide-react';
 import { AppSettings, OverlayMode } from '../../types';
 
@@ -19,6 +19,7 @@ interface HeaderProps {
   settings: AppSettings;
   onUpdateSettings: (newSettings: Partial<AppSettings>) => void;
   onOpenSettings: () => void;
+  onOpenCheatSheet: () => void;
   onTogglePillMode: () => void;
   isListening?: boolean;
 }
@@ -27,6 +28,7 @@ export const Header: React.FC<HeaderProps> = ({
   settings,
   onUpdateSettings,
   onOpenSettings,
+  onOpenCheatSheet,
   onTogglePillMode,
   isListening
 }) => {
@@ -147,6 +149,15 @@ export const Header: React.FC<HeaderProps> = ({
             title="Panic Boss Hide (Ctrl+Shift+H / Alt+Space)"
           >
             <EyeOff className="w-3.5 h-3.5" />
+          </button>
+
+          {/* Cheat Sheet & DSA Patterns */}
+          <button
+            onClick={onOpenCheatSheet}
+            className="p-1.5 rounded-md hover:bg-white/10 text-slate-400 hover:text-cyan-300 transition-colors"
+            title="Interview Cheat Sheets & DSA Patterns"
+          >
+            <BookOpen className="w-3.5 h-3.5" />
           </button>
 
           {/* Settings Modal */}

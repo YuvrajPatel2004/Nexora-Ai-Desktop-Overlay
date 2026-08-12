@@ -16,10 +16,12 @@ import { ScreenSolver } from './components/solver/ScreenSolver';
 import { TeleprompterView } from './components/teleprompter/TeleprompterView';
 import { SnipOverlay } from './components/snipper/SnipOverlay';
 import { SettingsModal } from './components/settings/SettingsModal';
+import { CheatSheetDrawer } from './components/cheatsheet/CheatSheetDrawer';
 
 export function App() {
   const [settings, setSettings] = useState<AppSettings>(() => getStoredSettings());
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isCheatSheetOpen, setIsCheatSheetOpen] = useState(false);
   const [isSnipOverlayActive, setIsSnipOverlayActive] = useState(false);
   const [pendingScreenshot, setPendingScreenshot] = useState<string | null>(null);
   const [isListening, setIsListening] = useState(false);
@@ -194,6 +196,7 @@ export function App() {
             settings={settings}
             onUpdateSettings={handleUpdateSettings}
             onOpenSettings={() => setIsSettingsOpen(true)}
+            onOpenCheatSheet={() => setIsCheatSheetOpen(true)}
             onTogglePillMode={() => handleUpdateSettings({ viewStyle: 'compact-pill' })}
             isListening={isListening}
           />
@@ -211,6 +214,7 @@ export function App() {
             settings={settings}
             onUpdateSettings={handleUpdateSettings}
             onOpenSettings={() => setIsSettingsOpen(true)}
+            onOpenCheatSheet={() => setIsCheatSheetOpen(true)}
             onTogglePillMode={() => handleUpdateSettings({ viewStyle: 'compact-pill' })}
             isListening={isListening}
           />
@@ -249,6 +253,12 @@ export function App() {
           </main>
         </div>
       )}
+
+      {/* Interview Cheat Sheet Drawer */}
+      <CheatSheetDrawer
+        isOpen={isCheatSheetOpen}
+        onClose={() => setIsCheatSheetOpen(false)}
+      />
 
       {/* BYOK Settings & Stealth Modal */}
       {isSettingsOpen && (

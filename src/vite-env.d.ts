@@ -52,6 +52,9 @@ declare module 'lucide-react' {
   export const Lock: Icon;
   export const Globe: Icon;
   export const Terminal: Icon;
+  export const BookOpen: Icon;
+  export const Search: Icon;
+  export const Star: Icon;
 }
 
 interface Window {
