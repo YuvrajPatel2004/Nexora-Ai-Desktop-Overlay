@@ -1,50 +1,64 @@
-# Nexora AI - Undetectable Desktop AI Overlay & Interview Copilot 🛡️⚡
+# Nexora AI - Undetectable Desktop AI Overlay & Live Interview Copilot 🛡️⚡
 
-An ultra-stealth, undetectable desktop AI overlay assistant (inspired by Cluely, Interview Coder, and Ghost AI). Designed to float seamlessly over any IDE, meeting, browser, or coding assessment, capture screen & audio context in real-time, and **remain 100% invisible during screen shares** (Zoom, Google Meet, Microsoft Teams, Discord, and OBS Studio).
+[![Release](https://img.shields.io/badge/Release-v1.2.0-cyan?style=for-the-badge&logo=github)](https://github.com/YuvrajPatel2004/Nexora-Ai-Desktop-Overlay/releases)
+[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-emerald?style=for-the-badge)](https://github.com/YuvrajPatel2004/Nexora-Ai-Desktop-Overlay/releases)
+[![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
+[![BYOK](https://img.shields.io/badge/BYOK-Gemini%20%7C%20OpenAI%20%7C%20Claude%20%7C%20Groq%20%7C%20DeepSeek%20%7C%20Ollama-purple?style=for-the-badge)](https://github.com/YuvrajPatel2004/Nexora-Ai-Desktop-Overlay)
 
-Featuring **Bring Your Own Key (BYOK)** support with zero middleman servers.
+An ultra-stealth, production-grade desktop AI overlay assistant (inspired by Cluely, Interview Coder, and Ghost AI). Designed to float seamlessly over any IDE, meeting, browser, or coding assessment, capture screen and audio context in real-time, and **remain 100% invisible during screen shares** (Zoom, Google Meet, Microsoft Teams, Discord, and OBS Studio).
+
+Featuring **Bring Your Own Key (BYOK)** with 100% local client execution — **zero third-party middleman servers**.
+
+---
 
 ## 📦 Downloads (Pre-built Binaries)
 
-You can download ready-to-run packages directly from the [**GitHub Releases Page**](https://github.com/YuvrajPatel2004/Nexora-Ai-Desktop-Overlay/releases):
+Download the latest version from the [**GitHub Releases Page**](https://github.com/YuvrajPatel2004/Nexora-Ai-Desktop-Overlay/releases):
 
-| OS | Download Link | Format |
+| Operating System | Download Link | Package Format |
 |---|---|---|
-| **Windows 10 / 11** | [Download `.exe` Installer](https://github.com/YuvrajPatel2004/Nexora-Ai-Desktop-Overlay/releases/latest) | `.exe` (NSIS Installer / Portable) |
-| **macOS (Apple Silicon & Intel)** | [Download `.dmg`](https://github.com/YuvrajPatel2004/Nexora-Ai-Desktop-Overlay/releases/latest) | `.dmg` (Universal) |
-| **Linux (Fedora, Ubuntu, Debian, Arch)** | [Download `.AppImage`](https://github.com/YuvrajPatel2004/Nexora-Ai-Desktop-Overlay/releases/latest) | `.AppImage` (Executable) & `.deb` |
+| **🪟 Windows 10 / 11** | [**Download Windows Installer**](https://github.com/YuvrajPatel2004/Nexora-Ai-Desktop-Overlay/releases/latest) | `.exe` (NSIS Installer) & Portable |
+| **🍎 macOS (Apple Silicon & Intel)** | [**Download macOS DMG**](https://github.com/YuvrajPatel2004/Nexora-Ai-Desktop-Overlay/releases/latest) | `.dmg` (Universal Binary) & `.zip` |
+| **🐧 Linux (Fedora, Ubuntu, Debian, Arch)** | [**Download Linux AppImage**](https://github.com/YuvrajPatel2004/Nexora-Ai-Desktop-Overlay/releases/latest) | `.AppImage` (Executable), `.deb`, `.rpm` |
 
 ---
 
-## ⚡ 60-Second Quickstart
+## 🌟 Key Features
 
-### 1. Install & Launch
-```bash
-# Clone and enter directory
-git clone git@github.com:YuvrajPatel2004/Nexora-Ai-Desktop-Overlay.git
-cd Nexora-Ai-Desktop-Overlay
+### 1. 🛡️ Screenshare Invisibility (Hardware DRM Level)
+- Uses native `WDA_EXCLUDEFROMCAPTURE` (`0x11`) on Windows and `NSWindowSharingNone` on macOS.
+- **Eliminates the black rectangle** during screen sharing. Video meeting participants see straight through Nexora to whatever IDE or browser window is behind it.
+- On Linux (Wayland / X11), sharing a specific window (e.g. VS Code or Chrome) keeps Nexora completely hidden.
 
-# Install dependencies
-npm install
+### 2. 📱 Second-Screen Phone / iPad Companion (QR Code Sync)
+- **Local Wi-Fi Pairing**: Click the **Radio icon (📱)** in the header to open an encrypted SVG QR Code.
+- **Stealth Mobile HUD**: Scan the QR code with your phone or tablet on the same Wi-Fi to open an AMOLED stealth web HUD mirroring live DSA code solutions, speech transcripts, and remote controls (**Boss Panic Hide**, **Remote Screen Snip**).
 
-# Start the Desktop Overlay
-npm run dev:electron
-```
+### 3. 📄 Personal Resume & Knowledge Base RAG Engine
+- **First-Person AI Persona**: Upload your `.txt` or `.md` resume, past project metrics, system architecture diagrams, and STAR behavioral stories.
+- **Local BM25 / TF-IDF Retrieval**: When you answer questions, the AI automatically retrieves your real career history and cites your **actual past companies, scale numbers (QPS, users), and architecture**.
+- Includes an interactive **RAG Query Simulator** to test question retrieval.
 
-### 2. Enter Your API Key (BYOK)
-1. Click the **Gear icon (⚙️)** in the top bar.
-2. Choose your provider:
-   - **Google Gemini** (Gemini 2.0 Flash - Recommended & Multimodal)
-   - **OpenAI** (GPT-4o, o3-mini, o1)
-   - **Anthropic Claude** (Claude 3.7 Sonnet, Claude 3.5)
-   - **Groq** (Llama 3.3 70B - Ultra Fast)
-   - **DeepSeek** (V3 & R1)
-   - **Local Ollama** (100% offline & private)
-3. Paste your API key, click **Test Key**, and click **Done**.
+### 4. 🎙️ Live Interview Ear (Lossless 16kHz PCM WAV Audio Engine)
+- **Dual-Capture Mixer**: Simultaneously captures your physical microphone **AND** the interviewer's voice playing through your **headphones, earbuds, or speakers** across Windows (WASAPI Loopback), macOS (CoreAudio), and Linux (PipeWire / PulseAudio).
+- **In-Engine WAV Encoder**: Replaces unstable browser WebM chunks with clean 16kHz PCM WAV audio for flawless transcription with Google Gemini 2.0 Flash, Groq Whisper (`whisper-large-v3`), and OpenAI Whisper (`whisper-1`).
+- **Hallucination Shield**: Automatically suppresses silent phantom hallucinations (`"Thank you."`, `"Thanks for watching."`).
+
+### 5. 📺 HUD Teleprompter with Eye-Contact Horizon Guide
+- **Webcam Reading Horizon Line**: Position the teleprompter directly under your webcam to maintain natural eye contact while reading answers.
+- **Integrated Live Ear**: Transcribed interview questions auto-stream their AI answer directly into the auto-scroller with adjustable speed controls (`0.5x`, `1.0x`, `1.5x`, `2.0x`).
+- **1-Click Interview Presets**: Instant scripts for **Candidate Intro**, **STAR Outage Incident Response**, and **System Design Blueprints**.
+
+### 6. 📸 Interactive Crosshair Screen Snipper & Visual Solver
+- Crop any problem on screen with **<kbd>F10</kbd>** or **<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd>**.
+- Specialized tabs for **LeetCode / DSA** (Optimal code + Big-O Time/Space Complexity), **System Design**, **Code Debugger**, and **Exam / MCQ Solver**.
+
+### 7. 📖 DSA Patterns & Behavioral Cheat Sheets
+- Built-in slide-out drawer (<kbd>Book icon 📖</kbd>) with pre-built cheat sheets for **Sliding Window**, **Monotonic Stack**, **Topological Sort**, **Union-Find**, **Rate Limiters**, **Distributed Caching**, and **STAR Behavioral Stories**.
 
 ---
 
-## ⌨️ Global Hotkeys (Single-Key & Multi-Key)
+## ⌨️ Global Hotkeys
 
 | Action | Primary Shortcut | Single-Key / Easy Alternative |
 |---|---|---|
@@ -54,40 +68,46 @@ npm run dev:electron
 | **⚡ Instant Fullscreen Snap** | <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd> | <kbd>Alt</kbd> + <kbd>F</kbd> |
 | **🕶️ Panic Boss Hide** | <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>H</kbd> | <kbd>Alt</kbd> + <kbd>H</kbd> |
 | **🖱️ Toggle Click-Through HUD** | <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>T</kbd> | <kbd>Alt</kbd> + <kbd>T</kbd> |
-| **📋 Quick Copy Latest Solution** | <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>C</kbd> | Click "Copy" on any message |
+| **📋 Copy Latest Solution** | <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>C</kbd> | Click "Copy" on any message |
 
 ---
 
-## 🌟 Built-in Capabilities
+## ⚡ 60-Second Developer Quickstart
 
-1. **🛡️ Screenshare Invisibility (Hardware DRM Exclusion)**:
-   - Uses native `WDA_EXCLUDEFROMCAPTURE` (0x11) on Windows and `NSWindowSharingNone` on macOS.
-   - Eliminates black rectangles — participants see your desktop/IDE behind Nexora.
-   - On Linux, share a "Window" (VS Code / Chrome) to keep the overlay completely hidden.
+### 1. Clone & Run Locally
+```bash
+# Clone repository
+git clone git@github.com:YuvrajPatel2004/Nexora-Ai-Desktop-Overlay.git
+cd Nexora-Ai-Desktop-Overlay
 
-2. **📸 Interactive Screen Snipper & Visual Solver**:
-   - Freezes screen with crosshairs (<kbd>F10</kbd> / <kbd>Ctrl+Shift+S</kbd>) and crops any region.
-   - Dedicated tabs: **DSA / LeetCode** (Optimal code + Big-O Time/Space), **System Design**, **Error Debugger**, and **Exam / MCQ Solver**.
+# Install dependencies
+npm install
 
-3. **🎙️ Live Interview Ear (Real-time Audio Copilot)**:
-   - Real-time continuous speech transcription of interviewer questions with auto-generated talking points and STAR-method responses.
+# Start Electron overlay in development mode
+npm run dev:electron
+```
 
-4. **📖 Interview Cheat Sheets & DSA Pattern Finder (NEW)**:
-   - Built-in slide-out drawer (<kbd>Book icon 📖</kbd>) with pre-built templates for **Sliding Window**, **Monotonic Stack**, **Topological Sort**, **Union-Find**, **Rate Limiters**, **Caching Patterns**, and **STAR behavioral conflict/failure stories**.
-
-5. **⚡ Invisible Teleprompter & Floating Pill HUD**:
-   - Ultra-transparent HUD prompter that streams live answers across your screen.
-   - Compact pill mode that collapses Nexora into an edge badge.
+### 2. Enter Your API Key (BYOK)
+1. Click the **Gear icon (⚙️)** in the top bar.
+2. Select your provider:
+   - **Google Gemini** (Gemini 2.0 Flash / 1.5 Flash — Free & Multimodal)
+   - **OpenAI** (GPT-4o, o3-mini, o1)
+   - **Anthropic Claude** (Claude 3.7 Sonnet, Claude 3.5)
+   - **Groq** (Llama 3.3 70B & Whisper Large v3 — Ultra Fast)
+   - **DeepSeek** (V3 & R1)
+   - **Local Ollama** (100% Offline & Private)
+3. Enter your key, click **Test Key**, and start using Nexora!
 
 ---
 
-## 🚀 Cross-Platform Setup & Build Guide
+## 🚀 Cross-Platform Build Guide
 
 ### 🪟 Windows (10 / 11)
 ```powershell
 npm install
 npm run dev:electron
-# Build standalone .exe installer:
+
+# Build standalone installer:
 npm run build:electron
 ```
 
@@ -95,31 +115,33 @@ npm run build:electron
 ```bash
 npm install
 npm run dev:electron
-# Build .dmg package:
+
+# Build standalone .dmg:
 npm run build:electron
 ```
-*(Enable Screen Recording in System Settings > Privacy & Security)*
 
-### 🐧 Linux (Fedora GNOME, Ubuntu, Debian, Arch)
+### 🐧 Linux (Fedora, Ubuntu, Debian, Arch)
 ```bash
 npm install
 npm run dev:electron
 
-# Build AppImage (Executable on Fedora with no installation required):
+# Build AppImage:
 npm run build:appimage
 
-# Build native Fedora .rpm package:
+# Build native Fedora .rpm:
 npm run build:rpm
 ```
-*(On Fedora GNOME Wayland, screen capture uses PipeWire and xdg-desktop-portal-gnome automatically)*
 
 ---
 
-## 💡 Future Functionality Ideas & Roadmap
+## 🔒 Privacy & Security
 
-Here are additional features you can explore adding:
-1. **Interactive Code Sandbox / In-App Python Runner**: Execute and test code snippets with sample inputs directly inside the overlay.
-2. **Auto-Clipboard AI Listener**: Auto-detects when you copy code or error traces and automatically shows the fix in the overlay.
-3. **Smart Voice Synthesis (Whisper TTS)**: Discreetly reads concise answers into an earpiece / headphone channel.
-4. **Session Export to PDF/Markdown**: 1-click export of the entire interview transcript, questions asked, and optimal solutions.
-5. **Custom Company Personas**: Quick-select presets tailored for Google, Meta, Amazon, Microsoft, or Quant/HFT interviews.
+- **100% Client-Side**: All API requests are made directly from your machine to the AI provider endpoint using your own API key.
+- **Zero Middleman Servers**: No telemetry, no intermediate proxies, and no data collection.
+- **Local Document Storage**: All uploaded resumes and STAR stories in the RAG engine are stored exclusively in your local machine's encrypted application storage.
+
+---
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE).
