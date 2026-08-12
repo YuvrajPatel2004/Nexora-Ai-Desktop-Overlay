@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { ChevronRight, ChevronDown, Brain } from 'lucide-react';
 import { CodeViewer } from './CodeViewer';
 
 interface MarkdownRendererProps {
@@ -7,6 +8,18 @@ interface MarkdownRendererProps {
 }
 
 export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, isStreaming }) => {
+  const [showThought, setShowThought] = useState(false);
+
+  // Extract <thought> or <think> blocks if present
+  let thoughtText: string | null = null;
+  let cleanContent = content;
+
+  const thinkMatch = content.match(/<(thought|think)>([\s\S]*?)<\/(thought|think)>/i);
+  if (thinkMatch) {
+    thoughtText = thinkMatch[2].trim();
+    cleanContent = content.replace(/<(thought|think)>[\s\S]*?<\/(thought|think)>/gi, '').trim();
+  }
+
   // Parse code blocks vs regular text
   const parts: React.ReactNode[] = [];
   const codeBlockRegex = /```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g;
@@ -14,8 +27,8 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, isS
   let lastIndex = 0;
   let match;
 
-  while ((match = codeBlockRegex.exec(content)) !== null) {
-    const textBefore = content.substring(lastIndex, match.index);
+  while ((match = codeBlockRegex.exec(cleanContent)) !== null) {
+    const textBefore = cleanContent.substring(lastIndex, match.index);
     if (textBefore) {
       parts.push(renderFormattedText(textBefore, `text-${lastIndex}`));
     }
@@ -27,14 +40,39 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, isS
     lastIndex = match.index + match[0].length;
   }
 
-  const remainingText = content.substring(lastIndex);
+  const remainingText = cleanContent.substring(lastIndex);
   if (remainingText) {
     parts.push(renderFormattedText(remainingText, `text-${lastIndex}`));
   }
 
   return (
     <div className={`prose-invert text-slate-100 text-sm space-y-2 leading-relaxed ${isStreaming ? 'streaming-cursor' : ''}`}>
-      {parts.length > 0 ? parts : <span>{content}</span>}
+      {/* Collapsible Chain of Thought Block */}
+      {thoughtText && (
+        <div className="rounded-lg border border-purple-500/20 bg-purple-950/20 overflow-hidden mb-3">
+          <button
+            onClick={() => setShowThought(!showThought)}
+            className="w-full flex items-center justify-between px-3 py-1.5 bg-purple-900/20 text-purple-300 text-xs font-semibold hover:bg-purple-900/30 transition-colors"
+          >
+            <div className="flex items-center gap-1.5">
+              <Brain className="w-3.5 h-3.5 text-purple-400" />
+              <span>Chain of Thought Reasoning</span>
+            </div>
+            {showThought ? (
+              <ChevronDown className="w-3.5 h-3.5 text-purple-400" />
+            ) : (
+              <ChevronRight className="w-3.5 h-3.5 text-purple-400" />
+            )}
+          </button>
+          {showThought && (
+            <div className="p-3 text-xs text-purple-200/80 leading-relaxed border-t border-purple-500/15 font-mono whitespace-pre-wrap bg-black/40">
+              {thoughtText}
+            </div>
+          )}
+        </div>
+      )}
+
+      {parts.length > 0 ? parts : <span>{cleanContent}</span>}
     </div>
   );
 };
