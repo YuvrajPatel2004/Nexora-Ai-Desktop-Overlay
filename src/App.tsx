@@ -74,21 +74,29 @@ export function App() {
     };
   }, []);
 
-  // Global Keyboard listener for Web/Dev testing
+  // Global Keyboard listener for window events
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ctrl + Shift + S => Snip
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.code === 'KeyS') {
+      // Snip & Solve (F10 or Ctrl+Shift+S or Alt+S)
+      if (e.key === 'F10' || ((e.ctrlKey || e.metaKey || e.altKey) && (e.code === 'KeyS' || e.key === 's' || e.key === 'S') && (e.shiftKey || e.altKey))) {
         e.preventDefault();
         triggerSnip();
       }
-      // Ctrl + Shift + A => Audio
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.code === 'KeyA') {
+      // Audio Ear (F8 or Ctrl+Shift+A or Alt+A)
+      else if (e.key === 'F8' || ((e.ctrlKey || e.metaKey || e.altKey) && (e.code === 'KeyA' || e.key === 'a' || e.key === 'A') && (e.shiftKey || e.altKey))) {
         e.preventDefault();
         toggleAudioEar();
       }
-      // Ctrl + Shift + H => Panic hide
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.code === 'KeyH') {
+      // Toggle Overlay / Pill (F9 or Alt+Space or Alt+N)
+      else if (e.key === 'F9' || (e.altKey && (e.code === 'KeyN' || e.key === 'n' || e.code === 'Space' || e.key === ' '))) {
+        e.preventDefault();
+        setSettings(prev => ({
+          ...prev,
+          viewStyle: prev.viewStyle === 'compact-pill' ? 'expanded' : 'compact-pill'
+        }));
+      }
+      // Panic hide (Ctrl+Shift+H or Alt+H)
+      else if ((e.ctrlKey || e.metaKey || e.altKey) && (e.code === 'KeyH' || e.key === 'h' || e.key === 'H')) {
         e.preventDefault();
         if ((window as any).electronAPI?.hide) {
           (window as any).electronAPI.hide();

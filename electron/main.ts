@@ -72,9 +72,29 @@ function createMainWindow() {
   });
 }
 
+function safeRegisterShortcut(keys: string[], action: () => void, name: string) {
+  let anySuccess = false;
+  for (const key of keys) {
+    try {
+      const res = globalShortcut.register(key, action);
+      if (res) {
+        anySuccess = true;
+        console.log(`[Hotkeys] Registered '${name}': ${key}`);
+      } else {
+        console.warn(`[Hotkeys] Could not register key '${key}' for '${name}' (already in use by OS)`);
+      }
+    } catch (e) {
+      console.warn(`[Hotkeys] Error registering key '${key}':`, e);
+    }
+  }
+  return anySuccess;
+}
+
 function registerGlobalShortcuts() {
-  // Toggle overlay visibility (Alt + Space or Ctrl + Shift + Space)
-  globalShortcut.register('Alt+Space', () => {
+  globalShortcut.unregisterAll();
+
+  // 1. Toggle overlay visibility (Alt+Space, Ctrl+Shift+Space, Alt+N, F9)
+  safeRegisterShortcut(['Alt+Space', 'CommandOrControl+Shift+Space', 'Alt+N', 'F9'], () => {
     if (!mainWindow) return;
     if (mainWindow.isVisible()) {
       mainWindow.hide();
@@ -83,62 +103,53 @@ function registerGlobalShortcuts() {
       applyStealthAffinity(mainWindow, true);
       mainWindow.focus();
     }
-  });
+  }, 'Toggle Overlay');
 
-  globalShortcut.register('CommandOrControl+Shift+Space', () => {
-    if (!mainWindow) return;
-    if (mainWindow.isVisible()) {
-      mainWindow.hide();
-    } else {
-      mainWindow.show();
-      applyStealthAffinity(mainWindow, true);
-      mainWindow.focus();
-    }
-  });
-
-  // Boss Key / Panic Hide (Ctrl + Shift + H)
-  globalShortcut.register('CommandOrControl+Shift+H', () => {
+  // 2. Boss Key / Panic Hide (Ctrl+Shift+H, Alt+H)
+  safeRegisterShortcut(['CommandOrControl+Shift+H', 'Alt+H'], () => {
     if (mainWindow && mainWindow.isVisible()) {
       mainWindow.hide();
     }
-  });
+  }, 'Panic Boss Hide');
 
-  // Screen Snip & Solve (Ctrl + Shift + S)
-  globalShortcut.register('CommandOrControl+Shift+S', () => {
+  // 3. Screen Snip & Solve (Ctrl+Shift+S, Alt+S, F10)
+  safeRegisterShortcut(['CommandOrControl+Shift+S', 'Alt+S', 'F10'], () => {
     if (mainWindow) {
       if (!mainWindow.isVisible()) {
         mainWindow.show();
         applyStealthAffinity(mainWindow, true);
       }
+      mainWindow.focus();
       mainWindow.webContents.send('trigger-snip-capture');
     }
-  });
+  }, 'Snip & Solve');
 
-  // Fullscreen Instant Snap & Solve (Ctrl + Shift + F)
-  globalShortcut.register('CommandOrControl+Shift+F', () => {
+  // 4. Fullscreen Instant Snap & Solve (Ctrl+Shift+F, Alt+F)
+  safeRegisterShortcut(['CommandOrControl+Shift+F', 'Alt+F'], () => {
     if (mainWindow) {
       if (!mainWindow.isVisible()) {
         mainWindow.show();
         applyStealthAffinity(mainWindow, true);
       }
+      mainWindow.focus();
       mainWindow.webContents.send('trigger-fullscreen-capture');
     }
-  });
+  }, 'Fullscreen Snap');
 
-  // Toggle Live Audio Ear (Ctrl + Shift + A)
-  globalShortcut.register('CommandOrControl+Shift+A', () => {
+  // 5. Toggle Live Audio Ear (Ctrl+Shift+A, Alt+A, F8)
+  safeRegisterShortcut(['CommandOrControl+Shift+A', 'Alt+A', 'F8'], () => {
     if (mainWindow) {
       mainWindow.webContents.send('trigger-audio-toggle');
     }
-  });
+  }, 'Toggle Audio Ear');
 
-  // Toggle Click-Through HUD (Ctrl + Shift + T)
-  globalShortcut.register('CommandOrControl+Shift+T', () => {
+  // 6. Toggle Click-Through HUD (Ctrl+Shift+T, Alt+T)
+  safeRegisterShortcut(['CommandOrControl+Shift+T', 'Alt+T'], () => {
     if (!mainWindow) return;
     isClickThrough = !isClickThrough;
     mainWindow.setIgnoreMouseEvents(isClickThrough, { forward: true });
     mainWindow.webContents.send('click-through-changed', isClickThrough);
-  });
+  }, 'Toggle Click-Through');
 }
 
 function setupIpcHandlers() {
