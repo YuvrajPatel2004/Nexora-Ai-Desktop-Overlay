@@ -234,13 +234,19 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
                 {!isUser && !msg.isStreaming && (
                   <button
                     onClick={() => handleCopyMessage(msg)}
-                    className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-white/10 text-slate-400 hover:text-white transition-all flex items-center gap-0.5 text-[10px]"
-                    title="Copy response"
+                    className="px-2 py-0.5 rounded-md bg-white/10 hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-300 border border-white/10 transition-all flex items-center gap-1 text-[10px] font-medium"
+                    title="Copy full response to clipboard"
                   >
                     {copiedId === msg.id ? (
-                      <Check className="w-2.5 h-2.5 text-emerald-400" />
+                      <>
+                        <Check className="w-3 h-3 text-emerald-400" />
+                        <span className="text-emerald-400 font-semibold">Copied!</span>
+                      </>
                     ) : (
-                      <Copy className="w-2.5 h-2.5" />
+                      <>
+                        <Copy className="w-3 h-3 text-cyan-400" />
+                        <span>Copy Answer</span>
+                      </>
                     )}
                   </button>
                 )}

@@ -6,6 +6,11 @@ import { applyStealthAffinity } from './stealthProtection.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Flags for cross-platform and Linux Wayland/X11 screen capture
+app.commandLine.appendSwitch('enable-features', 'WebRTCPipeWireCapturer');
+app.commandLine.appendSwitch('enable-webrtc-pipewire-capturer');
+app.commandLine.appendSwitch('auto-select-desktop-capture-source', 'Entire screen');
+
 let mainWindow: BrowserWindow | null = null;
 let isClickThrough = false;
 
@@ -221,25 +226,33 @@ function setupIpcHandlers() {
 
   // Capture Entire Screen / Sources
   ipcMain.handle('capture-screen-sources', async () => {
-    const primaryDisplay = screen.getPrimaryDisplay();
-    const { width, height } = primaryDisplay.size;
+    try {
+      const primaryDisplay = screen.getPrimaryDisplay();
+      const { width, height } = primaryDisplay.size;
+      const scale = primaryDisplay.scaleFactor || 1;
 
-    const sources = await desktopCapturer.getSources({
-      types: ['screen'],
-      thumbnailSize: {
-        width: Math.round(width * primaryDisplay.scaleFactor),
-        height: Math.round(height * primaryDisplay.scaleFactor),
-      },
-    });
+      const sources = await desktopCapturer.getSources({
+        types: ['screen', 'window'],
+        thumbnailSize: {
+          width: Math.round(width * scale),
+          height: Math.round(height * scale),
+        },
+      });
 
-    if (sources.length > 0) {
-      return {
-        id: sources[0].id,
-        name: sources[0].name,
-        dataUrl: sources[0].thumbnail.toDataURL(),
-        width: width * primaryDisplay.scaleFactor,
-        height: height * primaryDisplay.scaleFactor,
-      };
+      // Find primary screen or first valid source
+      const screenSource = sources.find(s => s.id.startsWith('screen:')) || sources[0];
+
+      if (screenSource) {
+        return {
+          id: screenSource.id,
+          name: screenSource.name,
+          dataUrl: screenSource.thumbnail.toDataURL(),
+          width: width * scale,
+          height: height * scale,
+        };
+      }
+    } catch (err) {
+      console.warn('[ScreenCapture] Electron capture error:', err);
     }
     return null;
   });

@@ -144,6 +144,10 @@ export class LLMClient {
       generationConfig: {
         temperature: this.settings.temperature ?? 0.2,
         maxOutputTokens: 4096,
+        // Disable internal chain-of-thought monologue from printing to the user output
+        thinkingConfig: {
+          thinkingBudget: 0
+        }
       }
     };
 
@@ -230,10 +234,14 @@ export class LLMClient {
           if (!jsonStr) continue;
           try {
             const data = JSON.parse(jsonStr);
-            const textChunk = data.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (textChunk) {
-              fullText += textChunk;
-              onChunk?.(textChunk);
+            const parts = data.candidates?.[0]?.content?.parts || [];
+            for (const part of parts) {
+              // Skip internal thinking tokens if Gemini flags them
+              if (part.thought) continue;
+              if (part.text) {
+                fullText += part.text;
+                onChunk?.(part.text);
+              }
             }
           } catch (e) {
             // Ignore parse errors on partial lines
@@ -242,7 +250,16 @@ export class LLMClient {
       }
     }
 
-    return fullText;
+    // Clean any leading monologue artifacts if model still emitted reflections
+    let cleanOutput = fullText.trim();
+    if (cleanOutput.startsWith('*Wait*') || cleanOutput.startsWith('The user said')) {
+      const respIdx = cleanOutput.indexOf('Response:');
+      if (respIdx !== -1) {
+        cleanOutput = cleanOutput.substring(respIdx + 9).trim().replace(/^["']|["']$/g, '');
+      }
+    }
+
+    return cleanOutput;
   }
 
   // OpenAI Direct Call
