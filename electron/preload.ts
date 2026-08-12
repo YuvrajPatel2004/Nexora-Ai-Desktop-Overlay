@@ -27,6 +27,17 @@ export interface ElectronAPI {
   copyToClipboard: (text: string) => void;
   openExternal: (url: string) => void;
   
+  // Second-Screen Phone Companion
+  getCompanionInfo: () => Promise<{
+    isRunning: boolean;
+    port: number;
+    localIp: string;
+    fullUrl: string;
+    connectedCount: number;
+  }>;
+  broadcastToCompanion: (type: string, data: any) => void;
+  onCompanionAction: (callback: (action: string, payload?: any) => void) => () => void;
+
   // Event listeners
   onTriggerSnip: (callback: () => void) => () => void;
   onTriggerFullscreenCapture: (callback: () => void) => () => void;
@@ -50,6 +61,16 @@ const api: ElectronAPI = {
   
   copyToClipboard: (text) => ipcRenderer.send('copy-to-clipboard', text),
   openExternal: (url) => ipcRenderer.send('open-external', url),
+
+  getCompanionInfo: () => ipcRenderer.invoke('get-companion-info'),
+  broadcastToCompanion: (type, data) => ipcRenderer.send('broadcast-to-companion', type, data),
+  onCompanionAction: (callback) => {
+    const subscription = (_: any, action: string, payload: any) => callback(action, payload);
+    ipcRenderer.on('companion-action-received', subscription);
+    return () => {
+      ipcRenderer.removeListener('companion-action-received', subscription);
+    };
+  },
   
   onTriggerSnip: (callback) => {
     const subscription = () => callback();

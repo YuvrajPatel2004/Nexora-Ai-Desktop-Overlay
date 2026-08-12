@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain, globalShortcut, desktopCapturer, screen, c
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { applyStealthAffinity } from './stealthProtection.js';
+import { CompanionServer } from './companionServer.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -13,6 +14,7 @@ app.commandLine.appendSwitch('auto-select-desktop-capture-source', 'Entire scree
 
 let mainWindow: BrowserWindow | null = null;
 let isClickThrough = false;
+let companionServer: CompanionServer | null = null;
 
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 
@@ -256,13 +258,54 @@ function setupIpcHandlers() {
     }
     return null;
   });
+
+  // Feature B: Second-Screen Mobile Companion IPC
+  ipcMain.handle('get-companion-info', () => {
+    if (companionServer) {
+      return companionServer.getInfo();
+    }
+    return {
+      isRunning: false,
+      port: 4123,
+      localIp: '127.0.0.1',
+      fullUrl: 'http://127.0.0.1:4123',
+      connectedCount: 0
+    };
+  });
+
+  ipcMain.on('broadcast-to-companion', (_event, type, data) => {
+    companionServer?.broadcast(type, data);
+  });
 }
 
 // App lifecycle
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   createMainWindow();
   registerGlobalShortcuts();
   setupIpcHandlers();
+
+  // Start Second-Screen Mobile Companion Server
+  try {
+    companionServer = new CompanionServer(4123);
+    companionServer.setOnAction((action, payload) => {
+      if (action === 'panic-hide') {
+        if (mainWindow?.isVisible()) {
+          mainWindow.hide();
+        } else {
+          mainWindow?.show();
+        }
+      } else if (action === 'snip') {
+        mainWindow?.show();
+        mainWindow?.webContents.send('trigger-snip-capture');
+      } else if (action === 'audio-toggle') {
+        mainWindow?.webContents.send('trigger-audio-toggle');
+      }
+      mainWindow?.webContents.send('companion-action-received', action, payload);
+    });
+    await companionServer.start();
+  } catch (err) {
+    console.warn('[CompanionServer] Failed to start companion server:', err);
+  }
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -279,4 +322,6 @@ app.on('window-all-closed', () => {
 
 app.on('will-quit', () => {
   globalShortcut.unregisterAll();
+  companionServer?.stop();
 });
+

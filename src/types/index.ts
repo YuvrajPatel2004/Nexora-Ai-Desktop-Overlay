@@ -97,3 +97,70 @@ export interface SnipRegion {
   width: number;
   height: number;
 }
+
+// -------------------------------------------------------------
+// Feature F: Personal Resume & Knowledge Base RAG Types
+// -------------------------------------------------------------
+export type KnowledgeCategory = 
+  | 'resume' 
+  | 'projects' 
+  | 'system-design' 
+  | 'behavioral' 
+  | 'notes' 
+  | 'custom';
+
+export interface DocumentChunk {
+  id: string;
+  documentId: string;
+  sectionTitle: string;
+  content: string;
+  keywords: string[];
+  tokenEstimate: number;
+}
+
+export interface KnowledgeDocument {
+  id: string;
+  title: string;
+  category: KnowledgeCategory;
+  rawContent: string;
+  chunks: DocumentChunk[];
+  isActive: boolean;
+  createdAt: number;
+  updatedAt: number;
+  tags?: string[];
+  fileType?: string;
+  summary?: string;
+}
+
+export interface RAGQueryResult {
+  chunk: DocumentChunk;
+  score: number;
+  documentTitle: string;
+  category: KnowledgeCategory;
+}
+
+// -------------------------------------------------------------
+// Feature B: Second-Screen Mobile Companion Types
+// -------------------------------------------------------------
+export interface CompanionDevice {
+  id: string;
+  ip: string;
+  userAgent?: string;
+  connectedAt: number;
+  lastPing: number;
+}
+
+export interface CompanionServerInfo {
+  isRunning: boolean;
+  port: number;
+  localIp: string;
+  fullUrl: string;
+  connectedCount: number;
+}
+
+export interface CompanionPayload {
+  type: 'solution' | 'transcript' | 'snip' | 'mode' | 'notification' | 'action';
+  data: any;
+  timestamp: number;
+}
+

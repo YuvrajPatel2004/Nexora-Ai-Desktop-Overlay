@@ -11,7 +11,9 @@ import {
   Mic, 
   Crop, 
   Tv, 
-  BookOpen
+  BookOpen,
+  FileCode,
+  Radio
 } from 'lucide-react';
 import { AppSettings, OverlayMode } from '../../types';
 
@@ -20,6 +22,8 @@ interface HeaderProps {
   onUpdateSettings: (newSettings: Partial<AppSettings>) => void;
   onOpenSettings: () => void;
   onOpenCheatSheet: () => void;
+  onOpenKnowledgeBase?: () => void;
+  onOpenCompanion?: () => void;
   onTogglePillMode: () => void;
   isListening?: boolean;
 }
@@ -29,6 +33,8 @@ export const Header: React.FC<HeaderProps> = ({
   onUpdateSettings,
   onOpenSettings,
   onOpenCheatSheet,
+  onOpenKnowledgeBase,
+  onOpenCompanion,
   onTogglePillMode,
   isListening
 }) => {
@@ -149,6 +155,24 @@ export const Header: React.FC<HeaderProps> = ({
             title="Panic Boss Hide (Ctrl+Shift+H / Alt+Space)"
           >
             <EyeOff className="w-3.5 h-3.5" />
+          </button>
+
+          {/* Resume & Personal Knowledge Base RAG */}
+          <button
+            onClick={onOpenKnowledgeBase}
+            className="p-1.5 rounded-md hover:bg-white/10 text-slate-400 hover:text-cyan-300 transition-colors relative"
+            title="Personal Resume & Knowledge Base RAG"
+          >
+            <FileCode className="w-3.5 h-3.5" />
+          </button>
+
+          {/* Second-Screen Mobile Companion */}
+          <button
+            onClick={onOpenCompanion}
+            className="p-1.5 rounded-md hover:bg-white/10 text-slate-400 hover:text-cyan-300 transition-colors"
+            title="Second-Screen Mobile Companion (QR Sync)"
+          >
+            <Radio className="w-3.5 h-3.5" />
           </button>
 
           {/* Cheat Sheet & DSA Patterns */}

@@ -1,6 +1,8 @@
 import { AppSettings, ChatMessage } from '../../types';
 import { SYSTEM_PROMPTS } from '../storage/settingsStore';
 import { ScreenAnalyzer } from '../vision/screenAnalyzer';
+import { DocumentStore } from '../storage/documentStore';
+import { RAGEngine } from '../rag/ragEngine';
 
 export interface GenerateOptions {
   prompt: string;
@@ -8,6 +10,7 @@ export interface GenerateOptions {
   history?: ChatMessage[];
   systemPromptOverride?: string;
   onChunk?: (chunk: string) => void;
+  skipRAG?: boolean;
 }
 
 export class LLMClient {
@@ -21,16 +24,34 @@ export class LLMClient {
     this.settings = settings;
   }
 
-  private getEffectiveSystemPrompt(override?: string): string {
-    if (override) return override;
-    if (this.settings.customSystemPrompt?.trim()) {
-      return this.settings.customSystemPrompt.trim();
+  private getEffectiveSystemPrompt(promptText: string = '', override?: string, skipRAG: boolean = false): string {
+    let base = override;
+    if (!base) {
+      if (this.settings.customSystemPrompt?.trim()) {
+        base = this.settings.customSystemPrompt.trim();
+      } else {
+        const preset = this.settings.promptPreset || 'coding';
+        base = SYSTEM_PROMPTS[preset] || SYSTEM_PROMPTS.coding;
+        if (this.settings.preferredLanguage) {
+          base += `\nPreferred programming language: ${this.settings.preferredLanguage}. Provide all code solutions in ${this.settings.preferredLanguage} unless requested otherwise.`;
+        }
+      }
     }
-    const preset = this.settings.promptPreset || 'coding';
-    let base = SYSTEM_PROMPTS[preset] || SYSTEM_PROMPTS.coding;
-    if (this.settings.preferredLanguage) {
-      base += `\nPreferred programming language: ${this.settings.preferredLanguage}. Provide all code solutions in ${this.settings.preferredLanguage} unless requested otherwise.`;
+
+    // Auto-inject Personal Resume / Knowledge Base Context if relevant
+    if (!skipRAG && promptText) {
+      try {
+        const docs = DocumentStore.getDocuments();
+        const ragResults = RAGEngine.queryKnowledge(promptText, docs, 3);
+        if (ragResults.length > 0) {
+          const personalContext = RAGEngine.buildPersonalizedContext(ragResults);
+          base += personalContext;
+        }
+      } catch (e) {
+        console.warn('[LLMClient] RAG context injection warning:', e);
+      }
     }
+
     return base;
   }
 
@@ -38,7 +59,6 @@ export class LLMClient {
     const { prompt, screenshot, history = [], onChunk, systemPromptOverride } = options;
     const provider = this.settings.selectedProvider;
     const model = this.settings.selectedModel;
-    const systemPrompt = this.getEffectiveSystemPrompt(systemPromptOverride);
 
     // If model is text-only (Groq, DeepSeek, o3-mini) and an image is provided, extract text via OCR
     let effectivePrompt = prompt;
@@ -49,6 +69,8 @@ export class LLMClient {
         effectivePrompt = `${prompt}\n\n[OCR Extracted Problem/Code from Screen]:\n${ocrText}`;
       }
     }
+
+    const systemPrompt = this.getEffectiveSystemPrompt(effectivePrompt, systemPromptOverride, options.skipRAG);
 
     switch (provider) {
       case 'gemini':

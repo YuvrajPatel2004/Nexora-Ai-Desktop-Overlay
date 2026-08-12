@@ -18,6 +18,7 @@ import { AppSettings } from '../../types';
 import { LLMClient } from '../../services/ai/llmClient';
 import { ScreenAnalyzer } from '../../services/vision/screenAnalyzer';
 import { MarkdownRenderer } from '../common/MarkdownRenderer';
+import { CompanionBridge } from '../../services/companion/companionBridge';
 
 interface ScreenSolverProps {
   settings: AppSettings;
@@ -94,10 +95,14 @@ export const ScreenSolver: React.FC<ScreenSolverProps> = ({
         onChunk: (chunk) => {
           accumulated += chunk;
           setSolution(accumulated);
+          CompanionBridge.broadcastSolution(accumulated);
         },
       });
+      CompanionBridge.broadcastSolution(accumulated);
     } catch (err: any) {
-      setSolution(`⚠️ **Solver Error:** ${err.message || 'Failed to solve screenshot'}`);
+      const errorMsg = `⚠️ **Solver Error:** ${err.message || 'Failed to solve screenshot'}`;
+      setSolution(errorMsg);
+      CompanionBridge.broadcastSolution(errorMsg);
     } finally {
       setIsSolving(false);
     }

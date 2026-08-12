@@ -18,6 +18,7 @@ import { AppSettings, ChatMessage, LLMProvider } from '../../types';
 import { LLMClient } from '../../services/ai/llmClient';
 import { MarkdownRenderer } from '../common/MarkdownRenderer';
 import { AVAILABLE_MODELS } from '../../services/storage/settingsStore';
+import { CompanionBridge } from '../../services/companion/companionBridge';
 
 interface CopilotChatProps {
   settings: AppSettings;
@@ -126,8 +127,11 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
                 : msg
             )
           );
+          CompanionBridge.broadcastSolution(accumulatedText);
         },
       });
+
+      CompanionBridge.broadcastSolution(accumulatedText);
 
       const latencyMs = Date.now() - startTime;
       setMessages(prev =>

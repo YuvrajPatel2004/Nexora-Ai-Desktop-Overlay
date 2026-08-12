@@ -17,11 +17,16 @@ import { TeleprompterView } from './components/teleprompter/TeleprompterView';
 import { SnipOverlay } from './components/snipper/SnipOverlay';
 import { SettingsModal } from './components/settings/SettingsModal';
 import { CheatSheetDrawer } from './components/cheatsheet/CheatSheetDrawer';
+import { KnowledgeBaseModal } from './components/knowledge/KnowledgeBaseModal';
+import { CompanionModal } from './components/companion/CompanionModal';
+import { CompanionBridge } from './services/companion/companionBridge';
 
 export function App() {
   const [settings, setSettings] = useState<AppSettings>(() => getStoredSettings());
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isCheatSheetOpen, setIsCheatSheetOpen] = useState(false);
+  const [isKnowledgeBaseOpen, setIsKnowledgeBaseOpen] = useState(false);
+  const [isCompanionOpen, setIsCompanionOpen] = useState(false);
   const [isSnipOverlayActive, setIsSnipOverlayActive] = useState(false);
   const [pendingScreenshot, setPendingScreenshot] = useState<string | null>(null);
   const [isListening, setIsListening] = useState(false);
@@ -68,11 +73,24 @@ export function App() {
       setSettings(prev => ({ ...prev, clickThroughEnabled: val }));
     });
 
+    const cleanupCompanion = CompanionBridge.addActionListener((action) => {
+      if (action === 'snip') {
+        triggerSnip();
+      } else if (action === 'audio-toggle') {
+        toggleAudioEar();
+      } else if (action === 'preset-coding') {
+        handleUpdateSettings({ promptPreset: 'coding' });
+      } else if (action === 'preset-star') {
+        handleUpdateSettings({ promptPreset: 'interview-star' });
+      }
+    });
+
     return () => {
       cleanupSnip?.();
       cleanupFullscreen?.();
       cleanupAudio?.();
       cleanupClickThrough?.();
+      cleanupCompanion();
     };
   }, []);
 
@@ -197,6 +215,8 @@ export function App() {
             onUpdateSettings={handleUpdateSettings}
             onOpenSettings={() => setIsSettingsOpen(true)}
             onOpenCheatSheet={() => setIsCheatSheetOpen(true)}
+            onOpenKnowledgeBase={() => setIsKnowledgeBaseOpen(true)}
+            onOpenCompanion={() => setIsCompanionOpen(true)}
             onTogglePillMode={() => handleUpdateSettings({ viewStyle: 'compact-pill' })}
             isListening={isListening}
           />
@@ -215,6 +235,8 @@ export function App() {
             onUpdateSettings={handleUpdateSettings}
             onOpenSettings={() => setIsSettingsOpen(true)}
             onOpenCheatSheet={() => setIsCheatSheetOpen(true)}
+            onOpenKnowledgeBase={() => setIsKnowledgeBaseOpen(true)}
+            onOpenCompanion={() => setIsCompanionOpen(true)}
             onTogglePillMode={() => handleUpdateSettings({ viewStyle: 'compact-pill' })}
             isListening={isListening}
           />
@@ -258,6 +280,18 @@ export function App() {
       <CheatSheetDrawer
         isOpen={isCheatSheetOpen}
         onClose={() => setIsCheatSheetOpen(false)}
+      />
+
+      {/* Feature F: Personal Resume & Knowledge Base RAG Modal */}
+      <KnowledgeBaseModal
+        isOpen={isKnowledgeBaseOpen}
+        onClose={() => setIsKnowledgeBaseOpen(false)}
+      />
+
+      {/* Feature B: Second-Screen Phone/iPad Companion Modal */}
+      <CompanionModal
+        isOpen={isCompanionOpen}
+        onClose={() => setIsCompanionOpen(false)}
       />
 
       {/* BYOK Settings & Stealth Modal */}
