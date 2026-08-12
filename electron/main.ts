@@ -1,12 +1,12 @@
 import { app, BrowserWindow, ipcMain, globalShortcut, desktopCapturer, screen, clipboard, shell } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { applyStealthAffinity } from './stealthProtection.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 let mainWindow: BrowserWindow | null = null;
-let snipWindow: BrowserWindow | null = null;
 let isClickThrough = false;
 
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
@@ -43,8 +43,16 @@ function createMainWindow() {
     },
   });
 
-  // Enable Screenshare Protection (Invisible in Zoom, Google Meet, Teams, OBS, Discord)
-  mainWindow.setContentProtection(true);
+  // Enable Hardware-Level Screenshare Protection (WDA_EXCLUDEFROMCAPTURE: 0x11 on Windows)
+  // This eliminates the black rectangle and makes the overlay completely see-through/invisible to Zoom/Meet!
+  applyStealthAffinity(mainWindow, true);
+
+  mainWindow.once('ready-to-show', () => {
+    if (mainWindow) {
+      applyStealthAffinity(mainWindow, true);
+      mainWindow.show();
+    }
+  });
 
   // Keep on top of full screen apps
   mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
@@ -72,6 +80,7 @@ function registerGlobalShortcuts() {
       mainWindow.hide();
     } else {
       mainWindow.show();
+      applyStealthAffinity(mainWindow, true);
       mainWindow.focus();
     }
   });
@@ -82,6 +91,7 @@ function registerGlobalShortcuts() {
       mainWindow.hide();
     } else {
       mainWindow.show();
+      applyStealthAffinity(mainWindow, true);
       mainWindow.focus();
     }
   });
@@ -98,6 +108,7 @@ function registerGlobalShortcuts() {
     if (mainWindow) {
       if (!mainWindow.isVisible()) {
         mainWindow.show();
+        applyStealthAffinity(mainWindow, true);
       }
       mainWindow.webContents.send('trigger-snip-capture');
     }
@@ -108,6 +119,7 @@ function registerGlobalShortcuts() {
     if (mainWindow) {
       if (!mainWindow.isVisible()) {
         mainWindow.show();
+        applyStealthAffinity(mainWindow, true);
       }
       mainWindow.webContents.send('trigger-fullscreen-capture');
     }
@@ -138,18 +150,17 @@ function setupIpcHandlers() {
     }
   });
 
-  // Content Protection (Anti-Screenshare)
+  // Content Protection (Anti-Screenshare) with WDA_EXCLUDEFROMCAPTURE support
   ipcMain.handle('set-content-protection', (event, enable) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     if (win) {
-      win.setContentProtection(enable);
-      return true;
+      return applyStealthAffinity(win, enable);
     }
     return false;
   });
 
-  ipcMain.handle('get-content-protection-status', (event) => {
-    return true; // Window has setContentProtection enabled by default
+  ipcMain.handle('get-content-protection-status', (_event) => {
+    return true; // Window has WDA_EXCLUDEFROMCAPTURE enabled by default
   });
 
   // Window Controls
@@ -165,7 +176,10 @@ function setupIpcHandlers() {
 
   ipcMain.on('window-show', (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
-    win?.show();
+    if (win) {
+      win.show();
+      applyStealthAffinity(win, true);
+    }
   });
 
   ipcMain.on('window-close', () => {
