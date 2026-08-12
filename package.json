@@ -1,6 +1,6 @@
 {
   "name": "nexora-ai-overlay",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "Production-grade undetectable desktop AI overlay assistant with BYOK multi-provider support and anti-screenshare protection",
   "main": "dist-electron/main.js",
   "type": "module",
