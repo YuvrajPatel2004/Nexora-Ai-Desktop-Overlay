@@ -116,7 +116,11 @@ export class LLMClient {
     currentParts.push({ text: prompt || 'Analyze this problem/code and provide the optimal solution.' });
     contents.push({ role: 'user', parts: currentParts });
 
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${apiKey}`;
+    let effectiveModel = model;
+    if (effectiveModel === 'gemini-1.5-pro') effectiveModel = 'gemini-1.5-pro-latest';
+    if (effectiveModel === 'gemini-2.5-flash') effectiveModel = 'gemini-2.0-flash';
+
+    let endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${effectiveModel}:streamGenerateContent?alt=sse&key=${apiKey}`;
 
     const body = {
       contents,
@@ -129,11 +133,22 @@ export class LLMClient {
       }
     };
 
-    const response = await fetch(endpoint, {
+    let response = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
+
+    // Auto-fallback to gemini-2.0-flash if model returned 404
+    if (!response.ok && response.status === 404 && effectiveModel !== 'gemini-2.0-flash') {
+      console.warn(`[Gemini] ${effectiveModel} returned 404, falling back to gemini-2.0-flash...`);
+      endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse&key=${apiKey}`;
+      response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+    }
 
     if (!response.ok) {
       const errText = await response.text();

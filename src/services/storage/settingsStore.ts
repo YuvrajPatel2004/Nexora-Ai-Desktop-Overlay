@@ -1,19 +1,19 @@
-import { AppSettings, LLMProvider, ModelInfo } from '../../types';
+import { AppSettings, ModelInfo } from '../../types';
 
 export const AVAILABLE_MODELS: ModelInfo[] = [
   // Google Gemini
   {
-    id: 'gemini-2.5-flash',
-    name: 'Gemini 2.5 Flash',
+    id: 'gemini-2.0-flash',
+    name: 'Gemini 2.0 Flash',
     provider: 'gemini',
     contextWindow: '1M tokens',
     isVision: true,
     isFast: true,
     recommended: true,
-    description: 'Fastest multimodal model with native screen & code reasoning'
+    description: 'Fastest official multimodal model with native screen & code reasoning'
   },
   {
-    id: 'gemini-2.0-flash-thinking',
+    id: 'gemini-2.0-flash-thinking-exp-01-21',
     name: 'Gemini 2.0 Flash Thinking',
     provider: 'gemini',
     contextWindow: '1M tokens',
@@ -23,15 +23,6 @@ export const AVAILABLE_MODELS: ModelInfo[] = [
     description: 'Deep chain-of-thought reasoning for complex algorithms & system design'
   },
   {
-    id: 'gemini-1.5-pro',
-    name: 'Gemini 1.5 Pro',
-    provider: 'gemini',
-    contextWindow: '2M tokens',
-    isVision: true,
-    isFast: false,
-    description: 'Ultra-large context for full codebase analysis & deep architecture'
-  },
-  {
     id: 'gemini-1.5-flash',
     name: 'Gemini 1.5 Flash',
     provider: 'gemini',
@@ -39,6 +30,15 @@ export const AVAILABLE_MODELS: ModelInfo[] = [
     isVision: true,
     isFast: true,
     description: 'High throughput, low-latency visual analysis'
+  },
+  {
+    id: 'gemini-1.5-pro-latest',
+    name: 'Gemini 1.5 Pro',
+    provider: 'gemini',
+    contextWindow: '2M tokens',
+    isVision: true,
+    isFast: false,
+    description: 'Ultra-large context for full codebase analysis & deep architecture'
   },
 
   // OpenAI
@@ -182,7 +182,7 @@ const DEFAULT_SETTINGS: AppSettings = {
     custom: '',
   },
   selectedProvider: 'gemini',
-  selectedModel: 'gemini-2.5-flash',
+  selectedModel: 'gemini-2.0-flash',
   ollamaEndpoint: 'http://localhost:11434',
   ollamaModel: 'llama3.2-vision:latest',
   customEndpoint: 'https://api.openai.com/v1',
@@ -213,9 +213,17 @@ export function getStoredSettings(): AppSettings {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (!saved) return DEFAULT_SETTINGS;
     const parsed = JSON.parse(saved);
+    
+    // Auto-fix deprecated/not-found model names
+    let selModel = parsed.selectedModel || DEFAULT_SETTINGS.selectedModel;
+    if (selModel === 'gemini-2.5-flash' || selModel === 'gemini-1.5-pro') {
+      selModel = 'gemini-2.0-flash';
+    }
+
     return {
       ...DEFAULT_SETTINGS,
       ...parsed,
+      selectedModel: selModel,
       apiKeys: {
         ...DEFAULT_SETTINGS.apiKeys,
         ...(parsed.apiKeys || {})
