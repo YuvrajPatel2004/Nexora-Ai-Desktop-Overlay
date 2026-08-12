@@ -9,6 +9,9 @@
     "dev:electron": "node node_modules/concurrently/dist/bin/concurrently.js -k \"node node_modules/vite/bin/vite.js\" \"node node_modules/wait-on/bin/wait-on tcp:5173 && node node_modules/typescript/bin/tsc -p tsconfig.electron.json && node node_modules/electron/cli.js .\"",
     "build": "node node_modules/typescript/bin/tsc && node node_modules/vite/bin/vite.js build && node node_modules/typescript/bin/tsc -p tsconfig.electron.json",
     "build:electron": "npm run build && node node_modules/electron-builder/out/cli/cli.js",
+    "build:linux": "npm run build && node node_modules/electron-builder/out/cli/cli.js --linux",
+    "build:rpm": "npm run build && node node_modules/electron-builder/out/cli/cli.js --linux rpm",
+    "build:appimage": "npm run build && node node_modules/electron-builder/out/cli/cli.js --linux AppImage",
     "preview": "node node_modules/vite/bin/vite.js preview"
   },
   "keywords": [
@@ -22,7 +25,7 @@
     "openai",
     "groq"
   ],
-  "author": "Nexora AI",
+  "author": "Nexora AI <contact@nexora.ai>",
   "license": "MIT",
   "dependencies": {
     "clsx": "^2.1.1",
@@ -62,8 +65,10 @@
     "linux": {
       "target": [
         "AppImage",
+        "rpm",
         "deb"
       ],
+      "maintainer": "Nexora AI <contact@nexora.ai>",
       "category": "Utility"
     },
     "win": {

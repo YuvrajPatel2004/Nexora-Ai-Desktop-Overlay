@@ -83,11 +83,16 @@ This hardware flag instructs Apple's WindowServer and ScreenCaptureKit to exclud
 
 ---
 
-## 🐧 3. Linux Setup (Ubuntu, Debian, Fedora, Arch)
+## 🐧 3. Linux Setup (Fedora, GNOME, Ubuntu, Debian, Arch)
 
-### Prerequisites
-- Node.js (v18+)
-- `libnotify-bin` (optional for native notifications)
+### Prerequisites on Fedora Linux (GNOME)
+```bash
+# Node.js (v18 or v20+)
+sudo dnf install nodejs npm
+
+# Dependencies for native RPM packaging and system notifications:
+sudo dnf install rpm-build libxcrypt-compat libnotify
+```
 
 ### Running in Dev Mode
 ```bash
@@ -96,18 +101,40 @@ npm install
 npm run dev:electron
 ```
 
-#### If using Wayland compositor:
+#### If using Fedora GNOME on Wayland:
 ```bash
-npm run dev:electron -- --enable-features=UseOzonePlatform --ozone-platform=wayland
+npm run dev:electron -- --enable-features=UseOzonePlatform,WebRTCPipeWireCapturer --ozone-platform=wayland
 ```
 
-### Packaging Linux Binaries (`.AppImage` & `.deb`)
+### Packaging Linux Binaries (`.AppImage` & `.rpm`)
 ```bash
-npm run build:electron
+# Build universal AppImage (runs directly on Fedora):
+npm run build:appimage
+
+# Build native Fedora .rpm package:
+npm run build:rpm
+
+# Build all configured targets (AppImage, RPM, DEB):
+npm run build:linux
 ```
 The output packages will be in `release/`:
-- `release/Nexora AI Overlay-1.0.0.AppImage` (Executable on any Linux distro)
-- `release/nexora-ai-overlay_1.0.0_amd64.deb` (Debian/Ubuntu package)
+- `release/Nexora AI Overlay-1.0.0.AppImage` (Universal standalone binary: `chmod +x` and execute!)
+- `release/linux-unpacked/nexora-ai-overlay` (Unpacked standalone directory for direct testing)
+
+### Fedora AppImage & FUSE Notes:
+Fedora ships with FUSE 3 by default, whereas AppImages look for FUSE 2 runtime (`libfuse.so.2`):
+1. **Run without installing anything**:
+   ```bash
+   ./"release/Nexora AI Overlay-1.0.0.AppImage" --appimage-extract-and-run
+   ```
+2. **Or enable native AppImage execution on Fedora**:
+   ```bash
+   sudo dnf install fuse-libs
+   ```
+
+### Fedora GNOME Screen Capture & PipeWire Notes:
+- Fedora GNOME utilizes **PipeWire** and `xdg-desktop-portal-gnome` for screen capture and snipping.
+- PipeWire capturer flags (`WebRTCPipeWireCapturer`) are pre-configured in Electron's startup arguments in `electron/main.ts`.
 
 ---
 

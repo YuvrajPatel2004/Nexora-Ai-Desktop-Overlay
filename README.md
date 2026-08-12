@@ -4,6 +4,16 @@ An ultra-stealth, undetectable desktop AI overlay assistant (inspired by Cluely,
 
 Featuring **Bring Your Own Key (BYOK)** support with zero middleman servers.
 
+## 📦 Downloads (Pre-built Binaries)
+
+You can download ready-to-run packages directly from the [**GitHub Releases Page**](https://github.com/YuvrajPatel2004/Nexora-Ai-Desktop-Overlay/releases):
+
+| OS | Download Link | Format |
+|---|---|---|
+| **Windows 10 / 11** | [Download `.exe` Installer](https://github.com/YuvrajPatel2004/Nexora-Ai-Desktop-Overlay/releases/latest) | `.exe` (NSIS Installer / Portable) |
+| **macOS (Apple Silicon & Intel)** | [Download `.dmg`](https://github.com/YuvrajPatel2004/Nexora-Ai-Desktop-Overlay/releases/latest) | `.dmg` (Universal) |
+| **Linux (Fedora, Ubuntu, Debian, Arch)** | [Download `.AppImage`](https://github.com/YuvrajPatel2004/Nexora-Ai-Desktop-Overlay/releases/latest) | `.AppImage` (Executable) & `.deb` |
+
 ---
 
 ## ⚡ 60-Second Quickstart
@@ -90,13 +100,18 @@ npm run build:electron
 ```
 *(Enable Screen Recording in System Settings > Privacy & Security)*
 
-### 🐧 Linux (Fedora, Ubuntu, Debian, Arch)
+### 🐧 Linux (Fedora GNOME, Ubuntu, Debian, Arch)
 ```bash
 npm install
 npm run dev:electron
-# If using Wayland:
-npm run dev:electron -- --enable-features=UseOzonePlatform --ozone-platform=wayland
+
+# Build AppImage (Executable on Fedora with no installation required):
+npm run build:appimage
+
+# Build native Fedora .rpm package:
+npm run build:rpm
 ```
+*(On Fedora GNOME Wayland, screen capture uses PipeWire and xdg-desktop-portal-gnome automatically)*
 
 ---
 
