@@ -1,0 +1,80 @@
+{
+  "name": "nexora-ai-overlay",
+  "version": "1.0.0",
+  "description": "Production-grade undetectable desktop AI overlay assistant with BYOK multi-provider support and anti-screenshare protection",
+  "main": "dist-electron/main.js",
+  "type": "module",
+  "scripts": {
+    "dev": "node node_modules/vite/bin/vite.js",
+    "dev:electron": "node node_modules/concurrently/dist/bin/concurrently.js -k \"node node_modules/vite/bin/vite.js\" \"node node_modules/wait-on/bin/wait-on tcp:5173 && node node_modules/typescript/bin/tsc -p tsconfig.electron.json && node node_modules/electron/cli.js .\"",
+    "build": "node node_modules/typescript/bin/tsc && node node_modules/vite/bin/vite.js build && node node_modules/typescript/bin/tsc -p tsconfig.electron.json",
+    "build:electron": "npm run build && node node_modules/electron-builder/out/cli/cli.js",
+    "preview": "node node_modules/vite/bin/vite.js preview"
+  },
+  "keywords": [
+    "ai-overlay",
+    "interview-copilot",
+    "cluely-alternative",
+    "screenshare-proof",
+    "byok",
+    "gemini",
+    "claude",
+    "openai",
+    "groq"
+  ],
+  "author": "Nexora AI",
+  "license": "MIT",
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.16.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tailwind-merge": "^3.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.9",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "concurrently": "^9.1.2",
+    "electron": "^35.0.0",
+    "electron-builder": "^25.1.8",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.3",
+    "vite": "^6.2.0",
+    "wait-on": "^8.0.2"
+  },
+  "build": {
+    "appId": "com.nexora.overlay",
+    "productName": "Nexora AI Overlay",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "package.json"
+    ],
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Utility"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "category": "public.app-category.productivity"
+    }
+  }
+}
