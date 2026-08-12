@@ -20,6 +20,10 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, isS
     cleanContent = content.replace(/<(thought|think)>[\s\S]*?<\/(thought|think)>/gi, '').trim();
   }
 
+  // Filter out meta prompt echo bullets if present (e.g. "- User says:", "- Goal:", "- Role:", "- Tone:")
+  const metaRegex = /^\s*[-*•]\s*(User says|Context:|Goal:|Role:|Tone:|Capabilities:|Greeting:|Call to Action:|Reminder of what|Keep it short|Maintain the).*\n?/gmi;
+  cleanContent = cleanContent.replace(metaRegex, '').trim();
+
   // Parse code blocks vs regular text
   const parts: React.ReactNode[] = [];
   const codeBlockRegex = /```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g;

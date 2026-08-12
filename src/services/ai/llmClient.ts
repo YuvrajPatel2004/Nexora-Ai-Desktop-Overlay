@@ -1,5 +1,6 @@
-import { AppSettings, ChatMessage, LLMProvider } from '../../types';
+import { AppSettings, ChatMessage } from '../../types';
 import { SYSTEM_PROMPTS } from '../storage/settingsStore';
+import { ScreenAnalyzer } from '../vision/screenAnalyzer';
 
 export interface GenerateOptions {
   prompt: string;
@@ -39,21 +40,31 @@ export class LLMClient {
     const model = this.settings.selectedModel;
     const systemPrompt = this.getEffectiveSystemPrompt(systemPromptOverride);
 
+    // If model is text-only (Groq, DeepSeek, o3-mini) and an image is provided, extract text via OCR
+    let effectivePrompt = prompt;
+    const isTextOnlyModel = provider === 'groq' || provider === 'deepseek' || model === 'o3-mini';
+    if (screenshot && isTextOnlyModel) {
+      const ocrText = await ScreenAnalyzer.extractTextFromImage(screenshot);
+      if (ocrText) {
+        effectivePrompt = `${prompt}\n\n[OCR Extracted Problem/Code from Screen]:\n${ocrText}`;
+      }
+    }
+
     switch (provider) {
       case 'gemini':
-        return this.callGemini({ prompt, screenshot, history, systemPrompt, model, onChunk });
+        return this.callGemini({ prompt: effectivePrompt, screenshot, history, systemPrompt, model, onChunk });
       case 'openai':
-        return this.callOpenAI({ prompt, screenshot, history, systemPrompt, model, onChunk });
+        return this.callOpenAI({ prompt: effectivePrompt, screenshot: isTextOnlyModel ? undefined : screenshot, history, systemPrompt, model, onChunk });
       case 'anthropic':
-        return this.callAnthropic({ prompt, screenshot, history, systemPrompt, model, onChunk });
+        return this.callAnthropic({ prompt: effectivePrompt, screenshot, history, systemPrompt, model, onChunk });
       case 'groq':
-        return this.callGroq({ prompt, screenshot, history, systemPrompt, model, onChunk });
+        return this.callGroq({ prompt: effectivePrompt, screenshot: undefined, history, systemPrompt, model, onChunk });
       case 'deepseek':
-        return this.callDeepSeek({ prompt, screenshot, history, systemPrompt, model, onChunk });
+        return this.callDeepSeek({ prompt: effectivePrompt, screenshot: undefined, history, systemPrompt, model, onChunk });
       case 'ollama':
-        return this.callOllama({ prompt, screenshot, history, systemPrompt, onChunk });
+        return this.callOllama({ prompt: effectivePrompt, screenshot, history, systemPrompt, onChunk });
       case 'custom':
-        return this.callCustom({ prompt, screenshot, history, systemPrompt, onChunk });
+        return this.callCustom({ prompt: effectivePrompt, screenshot, history, systemPrompt, onChunk });
       default:
         throw new Error(`Unsupported provider: ${provider}`);
     }

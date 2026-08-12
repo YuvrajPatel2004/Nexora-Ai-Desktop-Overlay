@@ -1,4 +1,5 @@
 import { SnipRegion } from '../../types';
+import Tesseract from 'tesseract.js';
 
 export class ScreenAnalyzer {
   /**
@@ -52,46 +53,56 @@ export class ScreenAnalyzer {
   }
 
   /**
+   * Extract text from image via client-side OCR for models that don't accept images (Groq, DeepSeek, o3-mini)
+   */
+  public static async extractTextFromImage(dataUrl: string): Promise<string> {
+    try {
+      console.log('[OCR] Running client-side OCR text extraction...');
+      const result = await Tesseract.recognize(dataUrl, 'eng');
+      const text = result.data.text?.trim() || '';
+      console.log(`[OCR] Extracted ${text.length} characters.`);
+      return text;
+    } catch (err) {
+      console.warn('[OCR] Extraction error:', err);
+      return '';
+    }
+  }
+
+  /**
    * Generates prompt template for LeetCode / Coding problems
    */
   public static buildCodingPrompt(language: string = 'Python'): string {
-    return `Analyze this coding problem / screenshot:
-1. Problem Summary & Key Constraints.
-2. Optimal Algorithm Pattern (e.g. Two Pointers, Monotonic Stack, Dynamic Programming, Topological Sort).
-3. Production-Ready Code Solution in ${language} with clean comments.
-4. Time Complexity & Space Complexity Analysis (in Big-O notation).
-5. Edge Cases considered.`;
+    return `Solve this coding problem in ${language}:
+1. Optimal Algorithm & Code Solution.
+2. Big-O Time & Space Complexity.
+Output only the solution without meta reasoning.`;
   }
 
   /**
    * Generates prompt template for System Design problems
    */
   public static buildSystemDesignPrompt(): string {
-    return `Analyze this system design problem / architecture diagram:
-1. Requirements (Functional & Non-Functional: QPS, Latency, Data Volume).
-2. High-Level Architecture Components & Data Flow.
-3. Database & Storage Layer (SQL vs NoSQL, Indexing, Partitioning).
-4. Scalability Bottlenecks, Caching (Redis/CDN), and Fault Tolerance.
-5. Key Trade-offs & Deep-dive Discussion Points.`;
+    return `Provide a structured System Design architecture:
+1. Requirements & QPS.
+2. Component Architecture & DB choice.
+3. Scaling & Caching bottlenecks.`;
   }
 
   /**
    * Generates prompt template for Exam & Multiple Choice Questions
    */
   public static buildExamPrompt(): string {
-    return `Solve the question in this screenshot:
-1. Correct Option / Answer immediately at the top (bold).
-2. Step-by-step mathematical calculation or logical deduction.
-3. Quick explanation of why other options are incorrect.`;
+    return `Solve the question:
+1. State the correct answer in bold at the top.
+2. Step-by-step mathematical calculation or logical deduction.`;
   }
 
   /**
    * Generates prompt template for Bug Debugging & Error Logs
    */
   public static buildDebuggerPrompt(language: string = 'Python'): string {
-    return `Analyze this error stack trace / broken code:
-1. Root Cause in 1 sentence.
-2. Corrected Code Diff / Solution in ${language}.
-3. Why this fix works and how to prevent it.`;
+    return `Fix this error/code:
+1. Root cause in 1 sentence.
+2. Corrected code diff in ${language}.`;
   }
 }
