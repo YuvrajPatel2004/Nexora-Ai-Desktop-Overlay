@@ -196,6 +196,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   contentProtectionEnabled: true,
   clickThroughEnabled: false,
   alwaysOnTop: true,
+  hideFromTaskbar: true,
   
   promptPreset: 'coding',
   customSystemPrompt: '',

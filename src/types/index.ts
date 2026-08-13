@@ -55,6 +55,7 @@ export interface AppSettings {
   contentProtectionEnabled: boolean;
   clickThroughEnabled: boolean;
   alwaysOnTop: boolean;
+  hideFromTaskbar: boolean;
   
   // AI Behavior
   promptPreset: SystemPromptPreset;

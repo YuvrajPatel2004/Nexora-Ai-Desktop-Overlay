@@ -140,10 +140,11 @@ Fedora ships with FUSE 3 by default, whereas AppImages look for FUSE 2 runtime (
 
 ## ⚡ Quick Hotkey Reference
 
-- **Alt + Space** / **Ctrl + Shift + Space**: Toggle Overlay Show / Hide
-- **Ctrl + Shift + S**: Snip Screen Region & Solve
-- **Ctrl + Shift + F**: Fullscreen Instant Screenshot & Solve
-- **Ctrl + Shift + A**: Toggle Live Audio Interview Ear
-- **Ctrl + Shift + H**: Panic Boss Hide
-- **Ctrl + Shift + T**: Toggle Click-Through HUD Pass-Through
+- **Alt + Space** / **Ctrl + Shift + Space** / **F9** / **Alt + N** / **Alt + `**: Toggle Overlay Show / Hide
+- **Ctrl + Shift + S** / **F10** / **Alt + S** / **Alt + C**: Snip Entire Monitor Problem & Solve
+- **Ctrl + Shift + V** / **F6** / **Alt + P**: Direct Clipboard Image & Text Upload & Solve
+- **Ctrl + Shift + F** / **F11** / **Alt + F**: Fullscreen Instant Screenshot & Solve
+- **Ctrl + Shift + A** / **F8** / **Alt + A**: Toggle Live Audio Interview Ear
+- **Ctrl + Shift + H** / **F12** / **Alt + H** / **Alt + Q**: Panic Boss Hide
+- **Ctrl + Shift + T** / **F7** / **Alt + T**: Toggle Click-Through HUD Pass-Through
 - **Ctrl + Shift + C**: Copy Latest Solution Code to Clipboard

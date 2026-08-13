@@ -161,14 +161,15 @@ export const SnipOverlay: React.FC<SnipOverlayProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 cursor-crosshair select-none"
+      className="fixed inset-0 z-50 cursor-crosshair select-none w-screen h-screen overflow-hidden"
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       style={{
         backgroundImage: screenSource ? `url(${screenSource.dataUrl})` : undefined,
-        backgroundSize: 'cover',
+        backgroundSize: '100% 100%',
         backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
       }}
     >
       {/* Darkened overlay mask */}

@@ -56,19 +56,26 @@ Download the latest version from the [**GitHub Releases Page**](https://github.c
 ### 7. 📖 DSA Patterns & Behavioral Cheat Sheets
 - Built-in slide-out drawer (<kbd>Book icon 📖</kbd>) with pre-built cheat sheets for **Sliding Window**, **Monotonic Stack**, **Topological Sort**, **Union-Find**, **Rate Limiters**, **Distributed Caching**, and **STAR Behavioral Stories**.
 
+### 8. 🕶️ Silent Background Service & Zero Taskbar / Dock Footprint
+- Runs quietly as a background helper without appearing in the **Windows Taskbar**, **macOS Dock**, or **Linux window list** (`skipTaskbar` + `LSUIElement`).
+- Summon or hide instantly using global shortcuts (`Alt+Space`, `Ctrl+Shift+Space`, `Alt+N`, `F9`) or via the Phone Companion app.
+- Full monitor snipping (`F10` / `Ctrl+Shift+S`) freezes and covers your entire desktop display so you can crop any problem anywhere.
+- Direct clipboard solver (`Ctrl+Shift+V` / `Alt+P` / `F6`) automatically ingests copied images or text snippets.
+
 ---
 
 ## ⌨️ Global Hotkeys
 
-| Action | Primary Shortcut | Single-Key / Easy Alternative |
+| Action | Primary Shortcut | Fail-Safe Alternatives |
 |---|---|---|
-| **📸 Snip & Solve Screen** | <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd> | <kbd>F10</kbd> or <kbd>Alt</kbd> + <kbd>S</kbd> |
-| **👁️ Toggle Overlay (Show/Hide)** | <kbd>Alt</kbd> + <kbd>Space</kbd> | <kbd>F9</kbd> or <kbd>Alt</kbd> + <kbd>N</kbd> |
-| **🎙️ Toggle Interview Ear (Voice)** | <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>A</kbd> | <kbd>F8</kbd> or <kbd>Alt</kbd> + <kbd>A</kbd> |
-| **⚡ Instant Fullscreen Snap** | <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd> | <kbd>Alt</kbd> + <kbd>F</kbd> |
-| **🕶️ Panic Boss Hide** | <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>H</kbd> | <kbd>Alt</kbd> + <kbd>H</kbd> |
-| **🖱️ Toggle Click-Through HUD** | <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>T</kbd> | <kbd>Alt</kbd> + <kbd>T</kbd> |
-| **📋 Copy Latest Solution** | <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>C</kbd> | Click "Copy" on any message |
+| **📸 Snip Full Monitor & Solve** | <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd> | <kbd>F10</kbd>, <kbd>Alt</kbd> + <kbd>S</kbd>, <kbd>Alt</kbd> + <kbd>C</kbd> |
+| **📋 Paste Clipboard & Solve** | <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>V</kbd> | <kbd>F6</kbd>, <kbd>Alt</kbd> + <kbd>P</kbd> |
+| **👁️ Toggle Overlay (Show/Hide)** | <kbd>Alt</kbd> + <kbd>Space</kbd> | <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Space</kbd>, <kbd>F9</kbd>, <kbd>Alt</kbd> + <kbd>N</kbd>, <kbd>Alt</kbd> + <kbd>`</kbd> |
+| **🎙️ Toggle Interview Ear (Voice)** | <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>A</kbd> | <kbd>F8</kbd>, <kbd>Alt</kbd> + <kbd>A</kbd> |
+| **⚡ Instant Fullscreen Snap** | <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd> | <kbd>F11</kbd>, <kbd>Alt</kbd> + <kbd>F</kbd>, <kbd>Alt</kbd> + <kbd>V</kbd> |
+| **🕶️ Panic Boss Hide** | <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>H</kbd> | <kbd>Alt</kbd> + <kbd>H</kbd>, <kbd>F12</kbd>, <kbd>Alt</kbd> + <kbd>Q</kbd> |
+| **🖱️ Toggle Click-Through HUD** | <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>T</kbd> | <kbd>Alt</kbd> + <kbd>T</kbd>, <kbd>F7</kbd> |
+| **📋 Copy Latest Solution** | <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>C</kbd> | Click "Copy Answer" on message |
 
 ---
 

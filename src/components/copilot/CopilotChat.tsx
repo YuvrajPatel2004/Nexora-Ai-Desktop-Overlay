@@ -25,6 +25,8 @@ interface CopilotChatProps {
   llmClient: LLMClient;
   pendingScreenshot?: string | null;
   onClearPendingScreenshot?: () => void;
+  pendingClipboardText?: string | null;
+  onClearPendingClipboardText?: () => void;
   onTriggerSnip: () => void;
   onOpenSettings: () => void;
 }
@@ -34,6 +36,8 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
   llmClient,
   pendingScreenshot,
   onClearPendingScreenshot,
+  pendingClipboardText,
+  onClearPendingClipboardText,
   onTriggerSnip,
   onOpenSettings,
 }) => {
@@ -41,7 +45,7 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
     {
       id: 'welcome-msg',
       role: 'assistant',
-      content: `👋 **Nexora AI Overlay Active & Screenshare Invisible**\n\nI am your real-time desktop copilot. Ask any coding, interview, or architectural question, or **snip your screen** (\`Ctrl+Shift+S\`) to instantly analyze any problem.`,
+      content: `👋 **Nexora AI Overlay Active & Screenshare Invisible**\n\nI am your real-time desktop copilot. Ask any coding, interview, or architectural question, **snip your screen** (\`Ctrl+Shift+S\`), or **paste clipboard images & text** (\`Ctrl+Shift+V\` / \`Alt+P\`).`,
       timestamp: Date.now(),
       metrics: {
         provider: settings.selectedProvider,
@@ -62,6 +66,40 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
       onClearPendingScreenshot?.();
     }
   }, [pendingScreenshot]);
+
+  useEffect(() => {
+    if (pendingClipboardText) {
+      setInputText(pendingClipboardText);
+      onClearPendingClipboardText?.();
+    }
+  }, [pendingClipboardText]);
+
+  // Global window paste listener for direct image & text clipboard upload
+  useEffect(() => {
+    const handleWindowPaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+          const file = items[i].getAsFile();
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+              if (typeof event.target?.result === 'string') {
+                setAttachedImage(event.target.result);
+              }
+            };
+            reader.readAsDataURL(file);
+            e.preventDefault();
+            return;
+          }
+        }
+      }
+    };
+
+    window.addEventListener('paste', handleWindowPaste);
+    return () => window.removeEventListener('paste', handleWindowPaste);
+  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -162,6 +200,29 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
       );
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handlePasteFromClipboard = async () => {
+    try {
+      const electron = (window as any).electronAPI;
+      if (electron?.readClipboardContent) {
+        const data = await electron.readClipboardContent();
+        if (data?.type === 'image') {
+          setAttachedImage(data.content);
+          return;
+        } else if (data?.type === 'text') {
+          setInputText(data.content);
+          return;
+        }
+      }
+      // Web clipboard fallback
+      const text = await navigator.clipboard.readText();
+      if (text) {
+        setInputText(text);
+      }
+    } catch (e) {
+      console.warn('Failed to read clipboard:', e);
     }
   };
 
@@ -303,7 +364,7 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
         <div className="flex items-center justify-between mx-3 mt-2 px-2.5 py-1.5 rounded-lg bg-cyan-950/60 border border-cyan-500/40 text-xs">
           <div className="flex items-center gap-2 truncate">
             <ImageIcon className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-            <span className="text-cyan-200 truncate font-mono text-[11px]">Screen Snip attached</span>
+            <span className="text-cyan-200 truncate font-mono text-[11px]">Clipboard / Snip Image attached</span>
           </div>
           <button
             onClick={() => setAttachedImage(null)}
@@ -321,9 +382,18 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
           <button
             onClick={onTriggerSnip}
             className="p-2.5 text-slate-400 hover:text-cyan-400 hover:bg-white/5 transition-colors"
-            title="Snip Screen Area (Ctrl+Shift+S)"
+            title="Snip Screen Area (Ctrl+Shift+S / F10)"
           >
             <Crop className="w-4 h-4" />
+          </button>
+
+          {/* Direct Clipboard Paste button */}
+          <button
+            onClick={handlePasteFromClipboard}
+            className="p-2.5 text-slate-400 hover:text-cyan-400 hover:bg-white/5 transition-colors"
+            title="Paste Image / Text from Clipboard (Ctrl+Shift+V / Alt+P / F6)"
+          >
+            <ImageIcon className="w-4 h-4" />
           </button>
 
           {/* Text input */}
@@ -334,7 +404,7 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
             onKeyDown={handleKeyDown}
             placeholder={
               settings.apiKeys[settings.selectedProvider] || settings.selectedProvider === 'ollama'
-                ? "Ask anything, paste code, or snip screen (Ctrl+Shift+S)..."
+                ? "Ask anything, paste image/text (Ctrl+V / Ctrl+Shift+V)..."
                 : `Enter your ${settings.selectedProvider.toUpperCase()} API key in Settings (⚙️)...`
             }
             rows={1}

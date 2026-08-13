@@ -29,15 +29,21 @@ export function App() {
   const [isCompanionOpen, setIsCompanionOpen] = useState(false);
   const [isSnipOverlayActive, setIsSnipOverlayActive] = useState(false);
   const [pendingScreenshot, setPendingScreenshot] = useState<string | null>(null);
+  const [pendingClipboardText, setPendingClipboardText] = useState<string | null>(null);
   const [isListening, setIsListening] = useState(false);
   const [latestAnswerPreview, setLatestAnswerPreview] = useState<string | undefined>();
 
   const llmClient = useMemo(() => new LLMClient(settings), []);
 
-  // Update LLM client whenever settings update
+  // Update LLM client and window stealth flags whenever settings update
   useEffect(() => {
     llmClient.updateSettings(settings);
     saveSettings(settings);
+
+    // Sync taskbar & dock concealment
+    if ((window as any).electronAPI?.setSkipTaskbar && typeof settings.hideFromTaskbar === 'boolean') {
+      (window as any).electronAPI.setSkipTaskbar(settings.hideFromTaskbar);
+    }
 
     // Update document theme class
     const root = document.documentElement;
@@ -69,6 +75,16 @@ export function App() {
       toggleAudioEar();
     });
 
+    const cleanupClipboard = electron.onTriggerClipboardContent?.((data: { type: 'image' | 'text'; content: string }) => {
+      if (data.type === 'image') {
+        setPendingScreenshot(data.content);
+        setSettings(prev => ({ ...prev, mode: 'copilot', viewStyle: 'expanded' }));
+      } else if (data.type === 'text') {
+        setPendingClipboardText(data.content);
+        setSettings(prev => ({ ...prev, mode: 'copilot', viewStyle: 'expanded' }));
+      }
+    });
+
     const cleanupClickThrough = electron.onClickThroughChanged?.((val: boolean) => {
       setSettings(prev => ({ ...prev, clickThroughEnabled: val }));
     });
@@ -89,34 +105,85 @@ export function App() {
       cleanupSnip?.();
       cleanupFullscreen?.();
       cleanupAudio?.();
+      cleanupClipboard?.();
       cleanupClickThrough?.();
       cleanupCompanion();
     };
   }, []);
 
-  // Global Keyboard listener for window events
+  const handleDirectClipboardUpload = async () => {
+    try {
+      const electron = (window as any).electronAPI;
+      if (electron?.readClipboardContent) {
+        const data = await electron.readClipboardContent();
+        if (data?.type === 'image') {
+          setPendingScreenshot(data.content);
+          setSettings(prev => ({ ...prev, mode: 'copilot', viewStyle: 'expanded' }));
+          return;
+        } else if (data?.type === 'text') {
+          setPendingClipboardText(data.content);
+          setSettings(prev => ({ ...prev, mode: 'copilot', viewStyle: 'expanded' }));
+          return;
+        }
+      }
+      const text = await navigator.clipboard.readText();
+      if (text?.trim()) {
+        setPendingClipboardText(text.trim());
+        setSettings(prev => ({ ...prev, mode: 'copilot', viewStyle: 'expanded' }));
+      }
+    } catch (err) {
+      console.warn('Clipboard read error:', err);
+    }
+  };
+
+  // Global Keyboard listener for window & overlay events with fail-safe multi-keys
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Snip & Solve (F10 or Ctrl+Shift+S or Alt+S)
-      if (e.key === 'F10' || ((e.ctrlKey || e.metaKey || e.altKey) && (e.code === 'KeyS' || e.key === 's' || e.key === 'S') && (e.shiftKey || e.altKey))) {
+      // 1. Snip & Solve (F10, Ctrl+Shift+S, Alt+S, Alt+C)
+      if (
+        e.key === 'F10' ||
+        (e.altKey && (e.code === 'KeyS' || e.code === 'KeyC')) ||
+        ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.code === 'KeyS' || e.code === 'KeyC'))
+      ) {
         e.preventDefault();
         triggerSnip();
       }
-      // Audio Ear (F8 or Ctrl+Shift+A or Alt+A)
-      else if (e.key === 'F8' || ((e.ctrlKey || e.metaKey || e.altKey) && (e.code === 'KeyA' || e.key === 'a' || e.key === 'A') && (e.shiftKey || e.altKey))) {
+      // 2. Fullscreen Snap (F11, Ctrl+Shift+F, Alt+F, Alt+V)
+      else if (
+        e.key === 'F11' ||
+        (e.altKey && (e.code === 'KeyF' || e.code === 'KeyV')) ||
+        ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.code === 'KeyF' || e.code === 'KeyV'))
+      ) {
+        e.preventDefault();
+        triggerFullscreenCapture();
+      }
+      // 3. Audio Ear (F8, Ctrl+Shift+A, Alt+A)
+      else if (
+        e.key === 'F8' ||
+        (e.altKey && e.code === 'KeyA') ||
+        ((e.ctrlKey || e.metaKey) && e.shiftKey && e.code === 'KeyA')
+      ) {
         e.preventDefault();
         toggleAudioEar();
       }
-      // Toggle Overlay / Pill (F9 or Alt+Space or Alt+N)
-      else if (e.key === 'F9' || (e.altKey && (e.code === 'KeyN' || e.key === 'n' || e.code === 'Space' || e.key === ' '))) {
+      // 4. Toggle Overlay / Pill (F9, Alt+Space, Alt+N, Ctrl+Shift+Space, Alt+`)
+      else if (
+        e.key === 'F9' ||
+        (e.altKey && (e.code === 'KeyN' || e.code === 'Space' || e.code === 'Backquote')) ||
+        ((e.ctrlKey || e.metaKey) && e.shiftKey && e.code === 'Space')
+      ) {
         e.preventDefault();
         setSettings(prev => ({
           ...prev,
           viewStyle: prev.viewStyle === 'compact-pill' ? 'expanded' : 'compact-pill'
         }));
       }
-      // Panic hide (Ctrl+Shift+H or Alt+H)
-      else if ((e.ctrlKey || e.metaKey || e.altKey) && (e.code === 'KeyH' || e.key === 'h' || e.key === 'H')) {
+      // 5. Panic Boss Hide (F12, Ctrl+Shift+H, Alt+H, Alt+Q, Escape)
+      else if (
+        e.key === 'F12' ||
+        (e.altKey && (e.code === 'KeyH' || e.code === 'KeyQ')) ||
+        ((e.ctrlKey || e.metaKey) && e.shiftKey && e.code === 'KeyH')
+      ) {
         e.preventDefault();
         if ((window as any).electronAPI?.hide) {
           (window as any).electronAPI.hide();
@@ -127,17 +194,46 @@ export function App() {
           }));
         }
       }
+      // 6. Toggle Click-Through (F7, Ctrl+Shift+T, Alt+T)
+      else if (
+        e.key === 'F7' ||
+        (e.altKey && e.code === 'KeyT') ||
+        ((e.ctrlKey || e.metaKey) && e.shiftKey && e.code === 'KeyT')
+      ) {
+        e.preventDefault();
+        const next = !settings.clickThroughEnabled;
+        setSettings(prev => ({ ...prev, clickThroughEnabled: next }));
+        if ((window as any).electronAPI?.setIgnoreMouseEvents) {
+          (window as any).electronAPI.setIgnoreMouseEvents(next, { forward: true });
+        }
+      }
+      // 7. Clipboard Direct Paste & Solve (F6, Alt+P, Ctrl+Shift+V)
+      else if (
+        e.key === 'F6' ||
+        (e.altKey && e.code === 'KeyP') ||
+        ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.code === 'KeyV' || e.code === 'KeyP'))
+      ) {
+        e.preventDefault();
+        handleDirectClipboardUpload();
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [settings.clickThroughEnabled]);
 
   const handleUpdateSettings = (newSettings: Partial<AppSettings>) => {
     setSettings(prev => ({ ...prev, ...newSettings }));
   };
 
-  const triggerSnip = () => {
+  const triggerSnip = async () => {
+    try {
+      if ((window as any).electronAPI?.enterFullscreenSnip) {
+        await (window as any).electronAPI.enterFullscreenSnip();
+      }
+    } catch (err) {
+      console.warn('Enter fullscreen snip error:', err);
+    }
     setIsSnipOverlayActive(true);
   };
 
@@ -168,7 +264,14 @@ export function App() {
     setIsListening(nextState);
   };
 
-  const handleCaptureComplete = (croppedDataUrl: string) => {
+  const handleCaptureComplete = async (croppedDataUrl: string) => {
+    try {
+      if ((window as any).electronAPI?.exitFullscreenSnip) {
+        await (window as any).electronAPI.exitFullscreenSnip();
+      }
+    } catch (err) {
+      console.warn('Exit fullscreen snip error:', err);
+    }
     setIsSnipOverlayActive(false);
     setPendingScreenshot(croppedDataUrl);
     // Switch to solver mode or copilot mode
@@ -177,6 +280,17 @@ export function App() {
       mode: 'solver',
       viewStyle: 'expanded'
     }));
+  };
+
+  const handleCancelSnip = async () => {
+    try {
+      if ((window as any).electronAPI?.exitFullscreenSnip) {
+        await (window as any).electronAPI.exitFullscreenSnip();
+      }
+    } catch (err) {
+      console.warn('Exit fullscreen snip error:', err);
+    }
+    setIsSnipOverlayActive(false);
   };
 
   return (
@@ -191,7 +305,7 @@ export function App() {
       {isSnipOverlayActive && (
         <SnipOverlay
           onCaptureComplete={handleCaptureComplete}
-          onCancel={() => setIsSnipOverlayActive(false)}
+          onCancel={handleCancelSnip}
         />
       )}
 
@@ -248,6 +362,8 @@ export function App() {
                 llmClient={llmClient}
                 pendingScreenshot={pendingScreenshot}
                 onClearPendingScreenshot={() => setPendingScreenshot(null)}
+                pendingClipboardText={pendingClipboardText}
+                onClearPendingClipboardText={() => setPendingClipboardText(null)}
                 onTriggerSnip={triggerSnip}
                 onOpenSettings={() => setIsSettingsOpen(true)}
               />

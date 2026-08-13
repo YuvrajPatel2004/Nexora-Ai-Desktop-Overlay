@@ -42,7 +42,8 @@ function createMainWindow() {
     alwaysOnTop: true,
     hasShadow: false,
     resizable: true,
-    skipTaskbar: false,
+    skipTaskbar: true, // Invisible on Windows Taskbar and Linux panel
+    type: process.platform === 'linux' ? 'toolbar' : undefined,
     backgroundColor: '#00000000',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -56,12 +57,13 @@ function createMainWindow() {
   // This eliminates the black rectangle and makes the overlay completely see-through/invisible to Zoom/Meet!
   applyStealthAffinity(mainWindow, true);
 
-  mainWindow.once('ready-to-show', () => {
-    if (mainWindow) {
-      applyStealthAffinity(mainWindow, true);
-      mainWindow.show();
-    }
-  });
+mainWindow.once('ready-to-show', () => {
+  if (mainWindow) {
+    applyStealthAffinity(mainWindow, true);
+    // Don't show the window on startup.
+    // It can still be opened with your global hotkey.
+  }
+});
 
   // Keep on top of full screen apps
   mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
@@ -81,84 +83,163 @@ function createMainWindow() {
   });
 }
 
+function showOverlay() {
+  if (!mainWindow) return;
+  if (mainWindow.isMinimized()) {
+    mainWindow.restore();
+  }
+  mainWindow.show();
+  mainWindow.focus();
+  mainWindow.setAlwaysOnTop(true, 'screen-saver', 1);
+  mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  applyStealthAffinity(mainWindow, true);
+}
+
+function toggleOverlay() {
+  if (!mainWindow) return;
+  if (mainWindow.isVisible()) {
+    mainWindow.hide();
+  } else {
+    showOverlay();
+  }
+}
+
+function handleClipboardUpload() {
+  if (!mainWindow) return;
+  try {
+    const image = clipboard.readImage();
+    if (!image.isEmpty()) {
+      const dataUrl = image.toDataURL();
+      showOverlay();
+      mainWindow.webContents.send('trigger-clipboard-content', {
+        type: 'image',
+        content: dataUrl
+      });
+      return;
+    }
+    const text = clipboard.readText();
+    if (text && text.trim().length > 0) {
+      showOverlay();
+      mainWindow.webContents.send('trigger-clipboard-content', {
+        type: 'text',
+        content: text.trim()
+      });
+      return;
+    }
+  } catch (err) {
+    console.warn('[Clipboard] Error reading clipboard for shortcut:', err);
+  }
+}
+
 function safeRegisterShortcut(keys: string[], action: () => void, name: string) {
-  let anySuccess = false;
+  let registeredCount = 0;
   for (const key of keys) {
     try {
+      // If already registered, unregister first to avoid conflicts
+      if (globalShortcut.isRegistered(key)) {
+        globalShortcut.unregister(key);
+      }
       const res = globalShortcut.register(key, action);
       if (res) {
-        anySuccess = true;
+        registeredCount++;
         console.log(`[Hotkeys] Registered '${name}': ${key}`);
       } else {
-        console.warn(`[Hotkeys] Could not register key '${key}' for '${name}' (already in use by OS)`);
+        console.warn(`[Hotkeys] Key '${key}' for '${name}' in use by OS/app, trying fallbacks...`);
       }
     } catch (e) {
       console.warn(`[Hotkeys] Error registering key '${key}':`, e);
     }
   }
-  return anySuccess;
+  return registeredCount > 0;
 }
 
 function registerGlobalShortcuts() {
   globalShortcut.unregisterAll();
 
-  // 1. Toggle overlay visibility (Alt+Space, Ctrl+Shift+Space, Alt+N, F9)
-  safeRegisterShortcut(['Alt+Space', 'CommandOrControl+Shift+Space', 'Alt+N', 'F9'], () => {
-    if (!mainWindow) return;
-    if (mainWindow.isVisible()) {
-      mainWindow.hide();
-    } else {
-      mainWindow.show();
-      applyStealthAffinity(mainWindow, true);
-      mainWindow.focus();
-    }
+  // 1. Toggle overlay visibility (Multiple fallbacks: Ctrl+Shift+Space, Alt+Space, Alt+N, F9, Alt+`, Ctrl+Alt+N, Alt+\)
+  safeRegisterShortcut([
+    'CommandOrControl+Shift+Space',
+    'Alt+Space',
+    'Alt+N',
+    'F9',
+    'Alt+`',
+    'CommandOrControl+Alt+N',
+    'Alt+\\'
+  ], () => {
+    toggleOverlay();
   }, 'Toggle Overlay');
 
-  // 2. Boss Key / Panic Hide (Ctrl+Shift+H, Alt+H)
-  safeRegisterShortcut(['CommandOrControl+Shift+H', 'Alt+H'], () => {
+  // 2. Boss Key / Panic Hide (Ctrl+Shift+H, Alt+H, Alt+Q, F12)
+  safeRegisterShortcut([
+    'CommandOrControl+Shift+H',
+    'Alt+H',
+    'CommandOrControl+Alt+H',
+    'Alt+Q',
+    'F12'
+  ], () => {
     if (mainWindow && mainWindow.isVisible()) {
       mainWindow.hide();
     }
   }, 'Panic Boss Hide');
 
-  // 3. Screen Snip & Solve (Ctrl+Shift+S, Alt+S, F10)
-  safeRegisterShortcut(['CommandOrControl+Shift+S', 'Alt+S', 'F10'], () => {
-    if (mainWindow) {
-      if (!mainWindow.isVisible()) {
-        mainWindow.show();
-        applyStealthAffinity(mainWindow, true);
-      }
-      mainWindow.focus();
-      mainWindow.webContents.send('trigger-snip-capture');
-    }
+  // 3. Screen Snip & Solve (Ctrl+Shift+S, Alt+S, F10, Alt+C)
+  safeRegisterShortcut([
+    'CommandOrControl+Shift+S',
+    'Alt+S',
+    'F10',
+    'CommandOrControl+Alt+S',
+    'Alt+C'
+  ], () => {
+    showOverlay();
+    mainWindow?.webContents.send('trigger-snip-capture');
   }, 'Snip & Solve');
 
-  // 4. Fullscreen Instant Snap & Solve (Ctrl+Shift+F, Alt+F)
-  safeRegisterShortcut(['CommandOrControl+Shift+F', 'Alt+F'], () => {
-    if (mainWindow) {
-      if (!mainWindow.isVisible()) {
-        mainWindow.show();
-        applyStealthAffinity(mainWindow, true);
-      }
-      mainWindow.focus();
-      mainWindow.webContents.send('trigger-fullscreen-capture');
-    }
+  // 4. Fullscreen Instant Snap & Solve (Ctrl+Shift+F, Alt+F, F11, Alt+V)
+  safeRegisterShortcut([
+    'CommandOrControl+Shift+F',
+    'Alt+F',
+    'F11',
+    'CommandOrControl+Alt+F',
+    'Alt+V'
+  ], () => {
+    showOverlay();
+    mainWindow?.webContents.send('trigger-fullscreen-capture');
   }, 'Fullscreen Snap');
 
   // 5. Toggle Live Audio Ear (Ctrl+Shift+A, Alt+A, F8)
-  safeRegisterShortcut(['CommandOrControl+Shift+A', 'Alt+A', 'F8'], () => {
+  safeRegisterShortcut([
+    'CommandOrControl+Shift+A',
+    'Alt+A',
+    'F8',
+    'CommandOrControl+Alt+A'
+  ], () => {
     if (mainWindow) {
       mainWindow.webContents.send('trigger-audio-toggle');
     }
   }, 'Toggle Audio Ear');
 
-  // 6. Toggle Click-Through HUD (Ctrl+Shift+T, Alt+T)
-  safeRegisterShortcut(['CommandOrControl+Shift+T', 'Alt+T'], () => {
+  // 6. Toggle Click-Through HUD (Ctrl+Shift+T, Alt+T, F7)
+  safeRegisterShortcut([
+    'CommandOrControl+Shift+T',
+    'Alt+T',
+    'F7',
+    'CommandOrControl+Alt+T'
+  ], () => {
     if (!mainWindow) return;
     isClickThrough = !isClickThrough;
     mainWindow.setIgnoreMouseEvents(isClickThrough, { forward: true });
     mainWindow.webContents.send('click-through-changed', isClickThrough);
   }, 'Toggle Click-Through');
+
+  // 7. Clipboard Direct Upload / Paste & Solve (Ctrl+Shift+V, Alt+P, F6)
+  safeRegisterShortcut([
+    'CommandOrControl+Shift+V',
+    'Alt+P',
+    'F6',
+    'CommandOrControl+Alt+V'
+  ], () => {
+    handleClipboardUpload();
+  }, 'Clipboard Upload & Solve');
 }
 
 function setupIpcHandlers() {
@@ -168,6 +249,74 @@ function setupIpcHandlers() {
     if (win) {
       win.setIgnoreMouseEvents(ignore, { forward: true, ...options });
     }
+  });
+
+  // Read Clipboard Content (Image or Text)
+  ipcMain.handle('read-clipboard-content', () => {
+    try {
+      const image = clipboard.readImage();
+      if (!image.isEmpty()) {
+        return { type: 'image', content: image.toDataURL() };
+      }
+      const text = clipboard.readText();
+      if (text && text.trim().length > 0) {
+        return { type: 'text', content: text.trim() };
+      }
+    } catch (e) {
+      console.warn('[Clipboard] Read error:', e);
+    }
+    return null;
+  });
+
+  // Dynamic Skip Taskbar & Dock concealment
+  ipcMain.on('set-skip-taskbar', (event, skip: boolean) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win) {
+      win.setSkipTaskbar(skip);
+    }
+    if (process.platform === 'darwin') {
+      if (skip) {
+        app.dock?.hide();
+      } else {
+        app.dock?.show();
+      }
+    }
+  });
+
+  // Fullscreen Snipper bounds management
+  let savedWindowBounds: { x: number; y: number; width: number; height: number } | null = null;
+
+  ipcMain.handle('enter-fullscreen-snip', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (!win) return null;
+    const currentBounds = win.getBounds();
+    savedWindowBounds = currentBounds;
+
+    const currentDisplay = screen.getDisplayMatching(currentBounds);
+    win.setBounds(currentDisplay.bounds);
+    win.setAlwaysOnTop(true, 'screen-saver', 1);
+    win.focus();
+    return currentDisplay.bounds;
+  });
+
+  ipcMain.handle('exit-fullscreen-snip', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (!win) return;
+    if (savedWindowBounds) {
+      win.setBounds(savedWindowBounds);
+      savedWindowBounds = null;
+    } else {
+      const primaryDisplay = screen.getPrimaryDisplay();
+      const { width: screenWidth } = primaryDisplay.workAreaSize;
+      win.setBounds({
+        x: screenWidth - 460 - 24,
+        y: 36,
+        width: 460,
+        height: 720,
+      });
+    }
+    win.setAlwaysOnTop(true, 'screen-saver', 1);
+    win.focus();
   });
 
   // Content Protection (Anti-Screenshare) with WDA_EXCLUDEFROMCAPTURE support
@@ -183,10 +332,10 @@ function setupIpcHandlers() {
     return true; // Window has WDA_EXCLUDEFROMCAPTURE enabled by default
   });
 
-  // Window Controls
+  // Window Controls - Minimize hides gracefully to background service
   ipcMain.on('window-minimize', (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
-    win?.minimize();
+    win?.hide();
   });
 
   ipcMain.on('window-hide', (event) => {
@@ -315,6 +464,18 @@ function setupIpcHandlers() {
 
 // App lifecycle
 app.whenReady().then(async () => {
+  // Hide macOS Dock icon & set accessory activation policy for zero dock footprint
+  if (process.platform === 'darwin') {
+    app.dock?.hide();
+    try {
+      if ((app as any).setActivationPolicy) {
+        (app as any).setActivationPolicy('accessory');
+      }
+    } catch (e) {
+      console.warn('[MacOS] Could not set activation policy:', e);
+    }
+  }
+
   // Setup Cross-Platform Screen & Audio Loopback handler for Windows, macOS, and Linux
   session.defaultSession.setDisplayMediaRequestHandler((_request, callback) => {
     desktopCapturer.getSources({ types: ['screen'] }).then((sources) => {

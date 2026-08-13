@@ -81,7 +81,10 @@
       "target": [
         "dmg"
       ],
-      "category": "public.app-category.productivity"
+      "category": "public.app-category.productivity",
+      "extendInfo": {
+        "LSUIElement": 1
+      }
     }
   }
 }
