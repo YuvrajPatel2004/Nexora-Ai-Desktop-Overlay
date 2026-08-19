@@ -28,6 +28,7 @@ export function App() {
   const [isKnowledgeBaseOpen, setIsKnowledgeBaseOpen] = useState(false);
   const [isCompanionOpen, setIsCompanionOpen] = useState(false);
   const [isSnipOverlayActive, setIsSnipOverlayActive] = useState(false);
+  const [snipInitialSource, setSnipInitialSource] = useState<{ dataUrl: string; width: number; height: number } | null>(null);
   const [pendingScreenshot, setPendingScreenshot] = useState<string | null>(null);
   const [pendingClipboardText, setPendingClipboardText] = useState<string | null>(null);
   const [isListening, setIsListening] = useState(false);
@@ -109,6 +110,40 @@ export function App() {
       cleanupClickThrough?.();
       cleanupCompanion();
     };
+  }, []);
+
+  // Global window paste handler — works in ALL modes (Copilot, Solver, Interview, etc.)
+  // Intercepts Ctrl+V image pastes and routes them to the active mode
+  useEffect(() => {
+    const handleGlobalPaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.startsWith('image/')) {
+          const file = items[i].getAsFile();
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+              if (typeof event.target?.result === 'string') {
+                setPendingScreenshot(event.target.result);
+                // Expand the view if in compact/pill mode
+                setSettings(prev => ({
+                  ...prev,
+                  viewStyle: 'expanded'
+                }));
+              }
+            };
+            reader.readAsDataURL(file);
+            e.preventDefault();
+            return;
+          }
+        }
+      }
+    };
+
+    window.addEventListener('paste', handleGlobalPaste);
+    return () => window.removeEventListener('paste', handleGlobalPaste);
   }, []);
 
   const handleDirectClipboardUpload = async () => {
@@ -228,9 +263,16 @@ export function App() {
 
   const triggerSnip = async () => {
     try {
+      // 1. Pre-capture desktop before expanding to fullscreen
+      let initialSource: any = null;
+      if ((window as any).electronAPI?.captureScreenSources) {
+        initialSource = await (window as any).electronAPI.captureScreenSources();
+      }
+      // 2. Expand window to fullscreen bounds
       if ((window as any).electronAPI?.enterFullscreenSnip) {
         await (window as any).electronAPI.enterFullscreenSnip();
       }
+      setSnipInitialSource(initialSource);
     } catch (err) {
       console.warn('Enter fullscreen snip error:', err);
     }
@@ -273,6 +315,7 @@ export function App() {
       console.warn('Exit fullscreen snip error:', err);
     }
     setIsSnipOverlayActive(false);
+    setSnipInitialSource(null);
     setPendingScreenshot(croppedDataUrl);
     // Switch to solver mode or copilot mode
     setSettings(prev => ({
@@ -291,6 +334,7 @@ export function App() {
       console.warn('Exit fullscreen snip error:', err);
     }
     setIsSnipOverlayActive(false);
+    setSnipInitialSource(null);
   };
 
   return (
@@ -304,6 +348,7 @@ export function App() {
       {/* Fullscreen Snip Selector Canvas Overlay */}
       {isSnipOverlayActive && (
         <SnipOverlay
+          initialScreenSource={snipInitialSource}
           onCaptureComplete={handleCaptureComplete}
           onCancel={handleCancelSnip}
         />

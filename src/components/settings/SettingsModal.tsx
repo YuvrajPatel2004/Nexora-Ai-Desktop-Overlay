@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, 
   Key, 
@@ -13,10 +13,13 @@ import {
   Lock,
   Globe,
   Terminal,
-  EyeOff
+  EyeOff,
+  Mic,
+  Volume2
 } from 'lucide-react';
 import { AppSettings, LLMProvider, AppTheme, SystemPromptPreset } from '../../types';
 import { AVAILABLE_MODELS } from '../../services/storage/settingsStore';
+import { speechService, AudioInputDevice } from '../../services/audio/speechService';
 
 interface SettingsModalProps {
   settings: AppSettings;
@@ -32,6 +35,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [activeTab, setActiveTab] = useState<'byok' | 'stealth' | 'prompts' | 'hotkeys' | 'appearance'>('byok');
   const [testStatus, setTestStatus] = useState<{ [key: string]: 'testing' | 'success' | 'error' | null }>({});
   const [savedBadge, setSavedBadge] = useState(false);
+  const [audioDevices, setAudioDevices] = useState<AudioInputDevice[]>([]);
+  const [selectedAudioDevice, setSelectedAudioDevice] = useState<string>('default');
+
+  useEffect(() => {
+    const loadDevices = async () => {
+      const devices = await speechService.getAudioDevices();
+      setAudioDevices(devices);
+    };
+    loadDevices();
+    navigator.mediaDevices?.addEventListener('devicechange', loadDevices);
+    return () => {
+      navigator.mediaDevices?.removeEventListener('devicechange', loadDevices);
+    };
+  }, []);
 
   const handleApiKeyChange = (provider: LLMProvider, keyVal: string) => {
     onUpdateSettings({
@@ -383,6 +400,35 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     onChange={(e) => onUpdateSettings({ autoSolveSnips: e.target.checked })}
                     className="w-4 h-4 accent-cyan-400 cursor-pointer"
                   />
+                </div>
+
+                {/* Audio Input Device Selector */}
+                <div className="p-3 rounded-lg bg-white/5 border border-white/10 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Mic className="w-4 h-4 text-cyan-400" />
+                    <div>
+                      <span className="font-semibold text-slate-200">Microphone & Earbuds Audio Input</span>
+                      <p className="text-[10px] text-slate-400">Choose which audio device (earbuds, USB mic, headset) feeds the AI Interview Ear</p>
+                    </div>
+                  </div>
+                  <select
+                    value={selectedAudioDevice}
+                    onChange={(e) => {
+                      setSelectedAudioDevice(e.target.value);
+                      speechService.setSelectedDevice(e.target.value);
+                      showSaveNotification();
+                    }}
+                    className="w-full bg-slate-900 border border-white/10 rounded-lg p-2 text-cyan-300 text-xs focus:outline-none focus:border-cyan-400 font-mono"
+                  >
+                    <option value="default">System Default Device</option>
+                    {audioDevices
+                      .filter(d => d.deviceId !== 'default' && d.deviceId !== 'communications')
+                      .map(d => (
+                        <option key={d.deviceId} value={d.deviceId}>
+                          {d.label}
+                        </option>
+                      ))}
+                  </select>
                 </div>
               </div>
             </div>

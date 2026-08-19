@@ -53,12 +53,22 @@ export class SpeechService {
       if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
         return [];
       }
+      
+      // Request mic permission first to get real device labels
+      // (browsers hide labels until permission is granted)
+      try {
+        const tempStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        tempStream.getTracks().forEach(t => t.stop());
+      } catch (_) {
+        // Permission denied or no devices — continue with what we have
+      }
+      
       const devices = await navigator.mediaDevices.enumerateDevices();
       return devices
         .filter(d => d.kind === 'audioinput')
-        .map(d => ({
+        .map((d, idx) => ({
           deviceId: d.deviceId,
-          label: d.label || `Microphone / Audio Device (${d.deviceId.slice(0, 5)}...)`,
+          label: d.label || `Microphone ${idx + 1} (${d.deviceId.slice(0, 8)}...)`,
           isDefault: d.deviceId === 'default'
         }));
     } catch (e) {
@@ -142,15 +152,22 @@ export class SpeechService {
       // 1. Capture Microphone Stream (Your voice)
       if (this.captureMode === 'dual' || this.captureMode === 'mic') {
         try {
+          // Build audio constraints based on selected device
+          let audioConstraints: MediaTrackConstraints = {
+            echoCancellation: false,
+            noiseSuppression: false,
+            autoGainControl: true,
+          };
+
+          // If a specific device is selected (not 'default' or empty),
+          // use { exact: deviceId } to force that device. Otherwise let
+          // the browser pick the system default.
+          if (this.selectedDeviceId && this.selectedDeviceId !== 'default') {
+            audioConstraints.deviceId = { exact: this.selectedDeviceId };
+          }
+
           const micConstraints: MediaStreamConstraints = {
-            audio: {
-              deviceId: this.selectedDeviceId && this.selectedDeviceId !== 'default' 
-                ? { exact: this.selectedDeviceId } 
-                : undefined,
-              echoCancellation: false,
-              noiseSuppression: false,
-              autoGainControl: true,
-            }
+            audio: audioConstraints
           };
 
           this.micStream = await navigator.mediaDevices.getUserMedia(micConstraints);
@@ -159,8 +176,32 @@ export class SpeechService {
           micGain.gain.value = 1.2; // Slightly boost mic
           micSource.connect(micGain);
           micGain.connect(this.mixerGain);
-        } catch (err) {
+          
+          console.log(`[SpeechService] Mic captured: ${this.micStream.getAudioTracks()[0]?.label || 'unknown device'}`);
+        } catch (err: any) {
           console.warn('[SpeechService] Mic capture warning:', err);
+          
+          // If exact device failed, try again with no device constraint (system default)
+          if (this.selectedDeviceId && this.selectedDeviceId !== 'default') {
+            console.log('[SpeechService] Falling back to system default mic...');
+            try {
+              this.micStream = await navigator.mediaDevices.getUserMedia({
+                audio: {
+                  echoCancellation: false,
+                  noiseSuppression: false,
+                  autoGainControl: true,
+                }
+              });
+              const micSource = this.audioContext!.createMediaStreamSource(this.micStream);
+              const micGain = this.audioContext!.createGain();
+              micGain.gain.value = 1.2;
+              micSource.connect(micGain);
+              micGain.connect(this.mixerGain!);
+              console.log(`[SpeechService] Fallback mic captured: ${this.micStream.getAudioTracks()[0]?.label || 'unknown device'}`);
+            } catch (fallbackErr) {
+              console.warn('[SpeechService] Fallback mic also failed:', fallbackErr);
+            }
+          }
         }
       }
 

@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { AppSettings, SpeechTranscript } from '../../types';
 import { LLMClient } from '../../services/ai/llmClient';
-import { speechService } from '../../services/audio/speechService';
+import { speechService, AudioInputDevice } from '../../services/audio/speechService';
 import { MarkdownRenderer } from '../common/MarkdownRenderer';
 import { CompanionBridge } from '../../services/companion/companionBridge';
 
@@ -35,7 +35,27 @@ export const InterviewEar: React.FC<InterviewEarProps> = ({
   const [activeGeneratingId, setActiveGeneratingId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string>('Ready to listen to interview audio');
+  const [audioDevices, setAudioDevices] = useState<AudioInputDevice[]>([]);
+  const [selectedDevice, setSelectedDevice] = useState<string>('default');
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Enumerate audio devices on mount and when devices change
+  useEffect(() => {
+    const loadDevices = async () => {
+      const devices = await speechService.getAudioDevices();
+      setAudioDevices(devices);
+    };
+    loadDevices();
+
+    // Re-enumerate when devices are plugged in or removed
+    const handleDeviceChange = () => {
+      loadDevices();
+    };
+    navigator.mediaDevices?.addEventListener('devicechange', handleDeviceChange);
+    return () => {
+      navigator.mediaDevices?.removeEventListener('devicechange', handleDeviceChange);
+    };
+  }, []);
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -44,6 +64,16 @@ export const InterviewEar: React.FC<InterviewEarProps> = ({
   const handleModeChange = (mode: 'dual' | 'mic' | 'system') => {
     setCaptureMode(mode);
     speechService.setCaptureMode(mode);
+    if (isListening) {
+      speechService.stop();
+      setTimeout(toggleListening, 150);
+    }
+  };
+
+  const handleDeviceChange = (deviceId: string) => {
+    setSelectedDevice(deviceId);
+    speechService.setSelectedDevice(deviceId);
+    // Restart capture with the new device if currently listening
     if (isListening) {
       speechService.stop();
       setTimeout(toggleListening, 150);
@@ -224,6 +254,26 @@ export const InterviewEar: React.FC<InterviewEarProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Audio Device Selector */}
+          <div className="flex items-center gap-1">
+            <Mic className="w-3 h-3 text-slate-400 shrink-0" />
+            <select
+              value={selectedDevice}
+              onChange={(e) => handleDeviceChange(e.target.value)}
+              className="bg-black/50 border border-white/10 text-slate-200 text-[10px] rounded px-1 py-0.5 focus:outline-none focus:border-cyan-400 max-w-[120px] truncate"
+              title="Select audio input device (earbuds, external mic, etc.)"
+            >
+              <option value="default">System Default</option>
+              {audioDevices
+                .filter(d => d.deviceId !== 'default' && d.deviceId !== 'communications')
+                .map(d => (
+                  <option key={d.deviceId} value={d.deviceId}>
+                    {d.label}
+                  </option>
+                ))}
+            </select>
+          </div>
+
           {/* Audio Source Mode Switcher */}
           <div className="flex items-center gap-0.5 bg-black/40 border border-white/10 rounded-lg p-0.5 text-[10px]">
             <button

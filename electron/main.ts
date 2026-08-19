@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain, globalShortcut, desktopCapturer, screen, clipboard, shell, session } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { applyStealthAffinity } from './stealthProtection.js';
+import { applyStealthAffinity, temporarilyDisableProtection } from './stealthProtection.js';
 import { CompanionServer } from './companionServer.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -379,35 +379,93 @@ function setupIpcHandlers() {
 
   // Capture Entire Screen / Sources
   ipcMain.handle('capture-screen-sources', async () => {
+    // Temporarily disable content protection so our own window doesn't
+    // interfere with the screen capture (prevents blank/black captures)
+    const reEnableProtection = temporarilyDisableProtection(mainWindow);
+    
+    // Temporarily hide window from capture by setting opacity to 0
+    const wasVisible = mainWindow?.isVisible() ?? true;
+    if (mainWindow && wasVisible) {
+      mainWindow.setOpacity(0);
+    }
+
     try {
       const primaryDisplay = screen.getPrimaryDisplay();
       const { width, height } = primaryDisplay.size;
       const scale = primaryDisplay.scaleFactor || 1;
 
-      const sources = await desktopCapturer.getSources({
-        types: ['screen', 'window'],
-        thumbnailSize: {
-          width: Math.round(width * scale),
-          height: Math.round(height * scale),
-        },
-      });
+      // Small delay to let the OS compositor update after opacity change
+      await new Promise(resolve => setTimeout(resolve, 80));
 
-      // Find primary screen or first valid source
-      const screenSource = sources.find(s => s.id.startsWith('screen:')) || sources[0];
+      const captureWithSize = async (w: number, h: number) => {
+        const sources = await desktopCapturer.getSources({
+          types: ['screen'],
+          thumbnailSize: { width: w, height: h },
+        });
 
-      if (screenSource) {
-        return {
-          id: screenSource.id,
-          name: screenSource.name,
-          dataUrl: screenSource.thumbnail.toDataURL(),
-          width: width * scale,
-          height: height * scale,
-        };
+        const screenSource = sources.find(s => s.id.startsWith('screen:')) || sources[0];
+        if (screenSource) {
+          const dataUrl = screenSource.thumbnail.toDataURL();
+          // Verify the thumbnail isn't empty (> ~100 bytes base64 header)
+          if (dataUrl && dataUrl.length > 200) {
+            return {
+              id: screenSource.id,
+              name: screenSource.name,
+              dataUrl,
+              width: w,
+              height: h,
+            };
+          }
+        }
+        return null;
+      };
+
+      // Attempt 1: Full resolution with scale
+      let result = await captureWithSize(
+        Math.round(width * scale),
+        Math.round(height * scale)
+      );
+
+      // Attempt 2: Try without scale factor if first attempt returned empty
+      if (!result) {
+        console.warn('[ScreenCapture] First attempt returned empty, retrying without scale...');
+        result = await captureWithSize(width, height);
       }
+
+      // Attempt 3: Try with windows included
+      if (!result) {
+        console.warn('[ScreenCapture] Second attempt failed, trying with window sources...');
+        const sources = await desktopCapturer.getSources({
+          types: ['screen', 'window'],
+          thumbnailSize: { width: width, height: height },
+        });
+        const anySource = sources.find(s => {
+          const url = s.thumbnail.toDataURL();
+          return url && url.length > 200;
+        });
+        if (anySource) {
+          result = {
+            id: anySource.id,
+            name: anySource.name,
+            dataUrl: anySource.thumbnail.toDataURL(),
+            width,
+            height,
+          };
+        }
+      }
+
+      return result;
     } catch (err) {
       console.warn('[ScreenCapture] Electron capture error:', err);
+      return null;
+    } finally {
+      // Restore window opacity
+      if (mainWindow && wasVisible) {
+        mainWindow.setOpacity(1);
+      }
+      // Re-enable protection after capture
+      reEnableProtection();
     }
-    return null;
   });
 
   // Feature B: Second-Screen Mobile Companion IPC

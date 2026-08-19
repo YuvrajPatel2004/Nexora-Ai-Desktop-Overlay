@@ -16,11 +16,17 @@ export const WDA_EXCLUDEFROMCAPTURE = 0x00000011;
 export function applyStealthAffinity(win: BrowserWindow | null, enable: boolean = true): boolean {
   if (!win || win.isDestroyed()) return false;
 
-  try {
-    // 1. Standard Electron Content Protection
-    win.setContentProtection(enable);
-  } catch (err) {
-    console.warn('[StealthProtection] Electron setContentProtection warning:', err);
+  // On Linux, setContentProtection causes a BLACK RECTANGLE in Zoom/Meet/Teams
+  // screen shares instead of making the window invisible. There is no native
+  // Linux equivalent to WDA_EXCLUDEFROMCAPTURE. We rely on the window being
+  // transparent + toolbar type which naturally reduces capture visibility.
+  // Only apply setContentProtection on Windows and macOS where it works correctly.
+  if (process.platform !== 'linux') {
+    try {
+      win.setContentProtection(enable);
+    } catch (err) {
+      console.warn('[StealthProtection] Electron setContentProtection warning:', err);
+    }
   }
 
   // 2. Hardware-level Win32 WDA_EXCLUDEFROMCAPTURE (prevents the black box on Windows 10/11)
@@ -42,4 +48,20 @@ export function applyStealthAffinity(win: BrowserWindow | null, enable: boolean 
   }
 
   return true;
+}
+
+/**
+ * Temporarily disable stealth protection so we can capture the screen without
+ * our own overlay interfering. Returns a function to re-enable protection.
+ */
+export function temporarilyDisableProtection(win: BrowserWindow | null): () => void {
+  if (!win || win.isDestroyed()) return () => {};
+
+  // Disable protection
+  applyStealthAffinity(win, false);
+
+  // Return a re-enable function
+  return () => {
+    applyStealthAffinity(win, true);
+  };
 }

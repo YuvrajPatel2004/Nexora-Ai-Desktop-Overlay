@@ -12,7 +12,8 @@ import {
   FileCode,
   Layers,
   Bug,
-  GraduationCap
+  GraduationCap,
+  Image as ImageIcon
 } from 'lucide-react';
 import { AppSettings } from '../../types';
 import { LLMClient } from '../../services/ai/llmClient';
@@ -55,6 +56,44 @@ export const ScreenSolver: React.FC<ScreenSolverProps> = ({
       }
     }
   }, [pendingScreenshot]);
+
+  // Paste handler for images directly in Solver mode
+  const handlePasteImage = async () => {
+    try {
+      const electron = (window as any).electronAPI;
+      if (electron?.readClipboardContent) {
+        const data = await electron.readClipboardContent();
+        if (data?.type === 'image') {
+          setActiveImage(data.content);
+          if (settings.autoSolveSnips) {
+            handleSolve(data.content, solverType, preferredLang);
+          }
+          return;
+        }
+      }
+      // Web fallback — try reading clipboard items
+      if (navigator.clipboard && (navigator.clipboard as any).read) {
+        const items = await (navigator.clipboard as any).read();
+        for (const item of items) {
+          for (const type of item.types) {
+            if (type.startsWith('image/')) {
+              const blob = await item.getType(type);
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                if (typeof e.target?.result === 'string') {
+                  setActiveImage(e.target.result);
+                }
+              };
+              reader.readAsDataURL(blob);
+              return;
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('[Solver] Clipboard paste error:', err);
+    }
+  };
 
   const handleSolve = async (
     imageToUse?: string | null,
@@ -180,6 +219,15 @@ export const ScreenSolver: React.FC<ScreenSolverProps> = ({
             title="Instant Fullscreen Snap (Ctrl+Shift+F)"
           >
             <Maximize2 className="w-3.5 h-3.5" />
+          </button>
+
+          <button
+            onClick={handlePasteImage}
+            className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white text-xs transition-colors flex items-center gap-1"
+            title="Paste Image from Clipboard (Ctrl+V / Ctrl+Shift+V)"
+          >
+            <ImageIcon className="w-3.5 h-3.5" />
+            <span className="text-[10px]">Paste</span>
           </button>
         </div>
       </div>

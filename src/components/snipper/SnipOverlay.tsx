@@ -4,11 +4,17 @@ import { ScreenAnalyzer } from '../../services/vision/screenAnalyzer';
 import { SnipRegion } from '../../types';
 
 interface SnipOverlayProps {
+  initialScreenSource?: {
+    dataUrl: string;
+    width: number;
+    height: number;
+  } | null;
   onCaptureComplete: (croppedDataUrl: string) => void;
   onCancel: () => void;
 }
 
 export const SnipOverlay: React.FC<SnipOverlayProps> = ({
+  initialScreenSource,
   onCaptureComplete,
   onCancel,
 }) => {
@@ -16,16 +22,18 @@ export const SnipOverlay: React.FC<SnipOverlayProps> = ({
     dataUrl: string;
     width: number;
     height: number;
-  } | null>(null);
+  } | null>(initialScreenSource || null);
 
   const [isSelecting, setIsSelecting] = useState(false);
   const [startPos, setStartPos] = useState<{ x: number; y: number } | null>(null);
   const [currentPos, setCurrentPos] = useState<{ x: number; y: number } | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!initialScreenSource);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    captureDesktop();
+    if (!initialScreenSource) {
+      captureDesktop();
+    }
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -40,42 +48,76 @@ export const SnipOverlay: React.FC<SnipOverlayProps> = ({
     setLoading(true);
     setError(null);
     try {
-      if ((window as any).electronAPI?.captureScreenSources) {
-        const source = await (window as any).electronAPI.captureScreenSources();
-        if (source) {
+      const electron = (window as any).electronAPI;
+      
+      if (electron?.captureScreenSources) {
+        // Attempt 1: Direct capture via Electron
+        let source = await electron.captureScreenSources();
+        
+        // Attempt 2: Retry after a brief delay (helps on Wayland/Linux)
+        if (!source || !source.dataUrl || source.dataUrl.length < 200) {
+          console.warn('[SnipOverlay] First capture empty, retrying after delay...');
+          await new Promise(r => setTimeout(r, 250));
+          source = await electron.captureScreenSources();
+        }
+        
+        if (source && source.dataUrl && source.dataUrl.length > 200) {
           setScreenSource(source);
           setLoading(false);
           return;
         }
+        
+        console.warn('[SnipOverlay] Electron capture returned empty, falling back to getDisplayMedia...');
       }
 
       // Fallback: Use HTML5 Screen Capture API if running in browser / dev mode
-      const stream = await navigator.mediaDevices.getDisplayMedia({
-        video: true
-      });
-      const video = document.createElement('video');
-      video.srcObject = stream;
-      await video.play();
+      // or if Electron capture failed
+      if (navigator.mediaDevices?.getDisplayMedia) {
+        const stream = await navigator.mediaDevices.getDisplayMedia({
+          video: true
+        });
+        const video = document.createElement('video');
+        video.srcObject = stream;
+        await video.play();
+        
+        // Wait for video to have valid dimensions
+        await new Promise<void>((resolve) => {
+          const check = () => {
+            if (video.videoWidth > 0 && video.videoHeight > 0) {
+              resolve();
+            } else {
+              requestAnimationFrame(check);
+            }
+          };
+          check();
+        });
 
-      const canvas = document.createElement('canvas');
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const ctx = canvas.getContext('2d');
-      ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const dataUrl = canvas.toDataURL('image/png');
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/png');
 
-      // Stop tracks
-      stream.getTracks().forEach(t => t.stop());
+        // Stop tracks
+        stream.getTracks().forEach(t => t.stop());
 
-      setScreenSource({
-        dataUrl,
-        width: canvas.width,
-        height: canvas.height
-      });
+        if (dataUrl && dataUrl.length > 200) {
+          setScreenSource({
+            dataUrl,
+            width: canvas.width,
+            height: canvas.height
+          });
+          setLoading(false);
+          return;
+        }
+      }
+      
+      setError('Could not capture screen. Please check screen recording permissions and try again.');
       setLoading(false);
     } catch (err: any) {
       console.error('Failed to capture desktop screen:', err);
-      setError('Could not capture screen. Please check screen recording permissions.');
+      setError(`Could not capture screen: ${err.message || 'Unknown error'}. Please check screen recording permissions.`);
       setLoading(false);
     }
   };
