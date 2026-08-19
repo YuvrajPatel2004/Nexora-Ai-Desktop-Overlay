@@ -62,7 +62,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   const showSaveNotification = () => {
     setSavedBadge(true);
-    setTimeout(() => setSavedBadge(false), 2000);
+    setTimeout(() => setSavedBadge(false), 1800);
   };
 
   const handleTestKey = async (provider: LLMProvider) => {
@@ -74,11 +74,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       }
 
       if (provider === 'gemini') {
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+        let res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ contents: [{ parts: [{ text: 'ping' }] }] }),
         });
+        if (!res.ok) {
+          res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents: [{ parts: [{ text: 'ping' }] }] }),
+          });
+        }
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
       } else if (provider === 'openai') {
         const res = await fetch('https://api.openai.com/v1/models', {
@@ -104,11 +111,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   };
 
   const themes: { id: AppTheme; name: string; color: string }[] = [
-    { id: 'cyber-stealth', name: 'Cyber Stealth', color: 'bg-cyan-500' },
-    { id: 'obsidian', name: 'Obsidian Pure', color: 'bg-blue-500' },
+    { id: 'cyber-stealth', name: 'Monochrome Dark (Default)', color: 'bg-white' },
+    { id: 'obsidian', name: 'Obsidian Pure Black', color: 'bg-zinc-800' },
     { id: 'matrix-emerald', name: 'Matrix Emerald', color: 'bg-emerald-500' },
     { id: 'rose-gold', name: 'Rose Gold', color: 'bg-rose-500' },
-    { id: 'midnight-blue', name: 'Midnight Violet', color: 'bg-purple-500' },
+    { id: 'midnight-blue', name: 'Midnight Minimal', color: 'bg-zinc-600' },
   ];
 
   const presets: { id: SystemPromptPreset; name: string; desc: string }[] = [
@@ -121,15 +128,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-3 select-none">
-      <div className="w-full max-w-lg glass-panel rounded-2xl border border-white/15 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 select-none font-sans">
+      <div className="w-full max-w-lg bg-zinc-950 rounded-2xl border border-white/20 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-4 py-3 bg-slate-900/90 border-b border-white/10">
+        <div className="flex items-center justify-between px-4 py-3 bg-black border-b border-white/10">
           <div className="flex items-center gap-2">
-            <Key className="w-4 h-4 text-cyan-400" />
-            <h3 className="font-bold text-sm text-slate-100 font-sans">Settings & BYOK API Keys</h3>
+            <Key className="w-4 h-4 text-white" />
+            <h3 className="font-bold text-sm text-white">Settings & API Keys (BYOK)</h3>
             {savedBadge && (
-              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-semibold animate-pulse">
+              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/20 text-white text-[10px] font-semibold animate-pulse">
                 <Check className="w-3 h-3" /> Saved
               </span>
             )}
@@ -137,17 +144,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
           <button
             onClick={onClose}
-            className="p-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+            className="p-1 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex items-center gap-1 px-4 pt-2.5 bg-black/40 border-b border-white/10 text-xs overflow-x-auto no-scrollbar">
+        <div className="flex items-center gap-1 px-4 pt-2.5 bg-zinc-950 border-b border-white/10 text-xs overflow-x-auto no-scrollbar">
           {[
             { id: 'byok', label: 'API Keys (BYOK)', icon: <Key className="w-3.5 h-3.5" /> },
-            { id: 'stealth', label: 'Screen Protection', icon: <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> },
+            { id: 'stealth', label: 'Screen & Audio', icon: <ShieldCheck className="w-3.5 h-3.5 text-zinc-300" /> },
             { id: 'prompts', label: 'AI Presets', icon: <Cpu className="w-3.5 h-3.5" /> },
             { id: 'appearance', label: 'Appearance', icon: <Palette className="w-3.5 h-3.5" /> },
             { id: 'hotkeys', label: 'Hotkeys', icon: <Keyboard className="w-3.5 h-3.5" /> },
@@ -157,8 +164,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               onClick={() => setActiveTab(t.id as any)}
               className={`flex items-center gap-1.5 px-3 py-1.5 border-b-2 font-medium transition-all text-xs whitespace-nowrap ${
                 activeTab === t.id
-                  ? 'border-cyan-400 text-cyan-300 bg-cyan-500/10'
-                  : 'border-transparent text-slate-400 hover:text-slate-200'
+                  ? 'border-white text-white bg-white/10'
+                  : 'border-transparent text-zinc-400 hover:text-zinc-200'
               }`}
             >
               {t.icon}
@@ -172,20 +179,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           {/* TAB 1: BYOK API KEYS */}
           {activeTab === 'byok' && (
             <div className="space-y-4">
-              <div className="p-3 rounded-xl bg-cyan-950/30 border border-cyan-500/20 text-slate-300 space-y-1">
-                <div className="flex items-center gap-1.5 text-cyan-300 font-semibold">
+              <div className="p-3 rounded-xl bg-zinc-900 border border-white/10 text-zinc-300 space-y-1">
+                <div className="flex items-center gap-1.5 text-white font-semibold">
                   <Lock className="w-3.5 h-3.5" />
                   <span>100% Client-Side Privacy (BYOK)</span>
                 </div>
-                <p className="text-[11px] text-slate-400 leading-relaxed">
-                  Keys are stored exclusively on your machine and sent directly to the official AI endpoints. Zero telemetry, no recurring subscription locks.
+                <p className="text-[11px] text-zinc-400 leading-relaxed">
+                  Keys are stored exclusively on your local computer and sent directly to the official AI endpoints. Zero telemetry, no subscription locks.
                 </p>
               </div>
 
               {/* Active Provider & Model Selection */}
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-300 mb-1">Active AI Provider</label>
+                  <label className="block text-[11px] font-semibold text-zinc-300 mb-1">Active AI Provider</label>
                   <select
                     value={settings.selectedProvider}
                     onChange={(e) => {
@@ -193,24 +200,24 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       const defaultModel = AVAILABLE_MODELS.find(m => m.provider === newProv)?.id || '';
                       onUpdateSettings({ selectedProvider: newProv, selectedModel: defaultModel });
                     }}
-                    className="w-full bg-slate-900/90 border border-white/10 rounded-lg p-2 text-cyan-300 focus:outline-none focus:border-cyan-400"
+                    className="w-full bg-zinc-900 border border-white/10 rounded-lg p-2 text-white focus:outline-none focus:border-white font-mono"
                   >
-                    <option value="gemini">Google Gemini (Recommended - Vision & Fast)</option>
-                    <option value="openai">OpenAI (GPT-4o, o3-mini, o1)</option>
-                    <option value="anthropic">Anthropic Claude (Claude 3.7 / 3.5)</option>
+                    <option value="gemini">Google Gemini (Recommended / Free)</option>
+                    <option value="openai">OpenAI (GPT-4o, o3-mini)</option>
+                    <option value="anthropic">Anthropic Claude (Claude 3.7)</option>
                     <option value="groq">Groq (Llama 3.3 70B - Ultra Fast)</option>
                     <option value="deepseek">DeepSeek (V3 & R1)</option>
-                    <option value="ollama">Local Ollama (Offline / Private)</option>
-                    <option value="custom">Custom / OpenRouter Endpoint</option>
+                    <option value="ollama">Local Ollama (Offline)</option>
+                    <option value="custom">Custom Endpoint</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-300 mb-1">Selected Model</label>
+                  <label className="block text-[11px] font-semibold text-zinc-300 mb-1">Selected Model</label>
                   <select
                     value={settings.selectedModel}
                     onChange={(e) => onUpdateSettings({ selectedModel: e.target.value })}
-                    className="w-full bg-slate-900/90 border border-white/10 rounded-lg p-2 text-cyan-300 focus:outline-none focus:border-cyan-400"
+                    className="w-full bg-zinc-900 border border-white/10 rounded-lg p-2 text-white focus:outline-none focus:border-white font-mono"
                   >
                     {AVAILABLE_MODELS.filter(m => m.provider === settings.selectedProvider).map(m => (
                       <option key={m.id} value={m.id}>
@@ -226,10 +233,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 {/* Gemini */}
                 <div className="space-y-1">
                   <div className="flex items-center justify-between text-[11px]">
-                    <span className="font-semibold text-slate-300">Google Gemini API Key</span>
+                    <span className="font-semibold text-zinc-300">Google Gemini API Key (Free tier supported)</span>
                     <button
                       onClick={() => handleTestKey('gemini')}
-                      className="text-cyan-400 hover:underline"
+                      className="text-zinc-400 hover:text-white underline font-mono"
                     >
                       {testStatus.gemini === 'testing' ? 'Testing...' : testStatus.gemini === 'success' ? '✅ Connected' : testStatus.gemini === 'error' ? '❌ Invalid' : 'Test Key'}
                     </button>
@@ -239,17 +246,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     value={settings.apiKeys.gemini}
                     onChange={(e) => handleApiKeyChange('gemini', e.target.value)}
                     placeholder="AIzaSy..."
-                    className="w-full glass-input rounded-lg p-2 text-xs font-mono"
+                    className="w-full bg-zinc-900 border border-white/10 rounded-lg p-2 text-xs font-mono text-white placeholder-zinc-600 focus:outline-none focus:border-white"
                   />
                 </div>
 
                 {/* OpenAI */}
                 <div className="space-y-1">
                   <div className="flex items-center justify-between text-[11px]">
-                    <span className="font-semibold text-slate-300">OpenAI API Key</span>
+                    <span className="font-semibold text-zinc-300">OpenAI API Key</span>
                     <button
                       onClick={() => handleTestKey('openai')}
-                      className="text-cyan-400 hover:underline"
+                      className="text-zinc-400 hover:text-white underline font-mono"
                     >
                       {testStatus.openai === 'testing' ? 'Testing...' : testStatus.openai === 'success' ? '✅ Connected' : testStatus.openai === 'error' ? '❌ Invalid' : 'Test Key'}
                     </button>
@@ -259,31 +266,31 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     value={settings.apiKeys.openai}
                     onChange={(e) => handleApiKeyChange('openai', e.target.value)}
                     placeholder="sk-proj-..."
-                    className="w-full glass-input rounded-lg p-2 text-xs font-mono"
+                    className="w-full bg-zinc-900 border border-white/10 rounded-lg p-2 text-xs font-mono text-white placeholder-zinc-600 focus:outline-none focus:border-white"
                   />
                 </div>
 
                 {/* Anthropic Claude */}
                 <div className="space-y-1">
                   <div className="flex items-center justify-between text-[11px]">
-                    <span className="font-semibold text-slate-300">Anthropic Claude API Key</span>
+                    <span className="font-semibold text-zinc-300">Anthropic Claude API Key</span>
                   </div>
                   <input
                     type="password"
                     value={settings.apiKeys.anthropic}
                     onChange={(e) => handleApiKeyChange('anthropic', e.target.value)}
                     placeholder="sk-ant-..."
-                    className="w-full glass-input rounded-lg p-2 text-xs font-mono"
+                    className="w-full bg-zinc-900 border border-white/10 rounded-lg p-2 text-xs font-mono text-white placeholder-zinc-600 focus:outline-none focus:border-white"
                   />
                 </div>
 
                 {/* Groq */}
                 <div className="space-y-1">
                   <div className="flex items-center justify-between text-[11px]">
-                    <span className="font-semibold text-slate-300">Groq API Key (Ultra-Low Latency)</span>
+                    <span className="font-semibold text-zinc-300">Groq API Key (Ultra-Low Latency)</span>
                     <button
                       onClick={() => handleTestKey('groq')}
-                      className="text-cyan-400 hover:underline"
+                      className="text-zinc-400 hover:text-white underline font-mono"
                     >
                       {testStatus.groq === 'testing' ? 'Testing...' : testStatus.groq === 'success' ? '✅ Connected' : testStatus.groq === 'error' ? '❌ Invalid' : 'Test Key'}
                     </button>
@@ -293,70 +300,67 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     value={settings.apiKeys.groq}
                     onChange={(e) => handleApiKeyChange('groq', e.target.value)}
                     placeholder="gsk_..."
-                    className="w-full glass-input rounded-lg p-2 text-xs font-mono"
+                    className="w-full bg-zinc-900 border border-white/10 rounded-lg p-2 text-xs font-mono text-white placeholder-zinc-600 focus:outline-none focus:border-white"
                   />
                 </div>
 
                 {/* DeepSeek */}
                 <div className="space-y-1">
                   <div className="flex items-center justify-between text-[11px]">
-                    <span className="font-semibold text-slate-300">DeepSeek API Key</span>
+                    <span className="font-semibold text-zinc-300">DeepSeek API Key</span>
                   </div>
                   <input
                     type="password"
                     value={settings.apiKeys.deepseek}
                     onChange={(e) => handleApiKeyChange('deepseek', e.target.value)}
                     placeholder="sk-..."
-                    className="w-full glass-input rounded-lg p-2 text-xs font-mono"
+                    className="w-full bg-zinc-900 border border-white/10 rounded-lg p-2 text-xs font-mono text-white placeholder-zinc-600 focus:outline-none focus:border-white"
                   />
                 </div>
 
-                {/* Local Ollama */}
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="font-semibold text-slate-300">Local Ollama Endpoint</span>
-                    <button
-                      onClick={() => handleTestKey('ollama')}
-                      className="text-cyan-400 hover:underline"
-                    >
-                      {testStatus.ollama === 'testing' ? 'Testing...' : testStatus.ollama === 'success' ? '✅ Connected' : testStatus.ollama === 'error' ? '❌ Offline' : 'Test Endpoint'}
-                    </button>
+                {/* Local Ollama Settings */}
+                {settings.selectedProvider === 'ollama' && (
+                  <div className="p-3 rounded-lg bg-zinc-900 border border-white/10 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-zinc-200">Local Ollama Configuration</span>
+                      <button
+                        onClick={() => handleTestKey('ollama')}
+                        className="text-zinc-400 hover:text-white underline font-mono text-[11px]"
+                      >
+                        {testStatus.ollama === 'testing' ? 'Connecting...' : testStatus.ollama === 'success' ? '✅ Ollama Running' : testStatus.ollama === 'error' ? '❌ Not Found' : 'Check Server'}
+                      </button>
+                    </div>
+                    <input
+                      type="text"
+                      value={settings.ollamaEndpoint}
+                      onChange={(e) => onUpdateSettings({ ollamaEndpoint: e.target.value })}
+                      placeholder="http://localhost:11434"
+                      className="w-full bg-black border border-white/10 rounded-lg p-2 text-xs font-mono text-white focus:outline-none focus:border-white"
+                    />
                   </div>
-                  <input
-                    type="text"
-                    value={settings.ollamaEndpoint}
-                    onChange={(e) => onUpdateSettings({ ollamaEndpoint: e.target.value })}
-                    placeholder="http://localhost:11434"
-                    className="w-full glass-input rounded-lg p-2 text-xs font-mono"
-                  />
-                </div>
+                )}
               </div>
             </div>
           )}
 
-          {/* TAB 2: STEALTH & SCREEN PROTECTION */}
+          {/* TAB 2: STEALTH & AUDIO */}
           {activeTab === 'stealth' && (
             <div className="space-y-4">
-              <div className="p-3.5 rounded-xl bg-emerald-950/30 border border-emerald-500/30 space-y-2">
-                <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm">
-                  <ShieldCheck className="w-4 h-4" />
-                  <span>Hardware Screen Share Protection Active</span>
+              <div className="p-3 rounded-xl bg-zinc-900 border border-white/10 text-zinc-300 space-y-1.5">
+                <div className="flex items-center gap-1.5 text-white font-semibold">
+                  <ShieldCheck className="w-4 h-4 text-zinc-200" />
+                  <span>Screenshare Protection & Hardware Routing</span>
                 </div>
-                <p className="text-[11px] text-slate-300 leading-relaxed">
-                  Nexora uses native OS window protection flags (<code>WDA_EXCLUDEFROMCAPTURE</code> on Windows and <code>NSWindowSharingNone</code> on macOS via Electron <code>setContentProtection(true)</code>).
+                <p className="text-[11px] text-zinc-400 leading-relaxed">
+                  On Windows, Nexora uses hardware-level <code className="text-white">WDA_EXCLUDEFROMCAPTURE</code> so your screen shares in Zoom, Google Meet, Teams, and Discord see straight through the overlay with zero black boxes.
                 </p>
-                <div className="text-[11px] text-slate-400 space-y-1">
-                  <div>✅ <strong>Zoom:</strong> Hidden from desktop and window share.</div>
-                  <div>✅ <strong>Google Meet & Teams:</strong> Completely invisible to meeting participants.</div>
-                  <div>✅ <strong>Discord & OBS Studio:</strong> Captures desktop behind the overlay.</div>
-                </div>
               </div>
 
               <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/10">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-900 border border-white/10">
                   <div>
-                    <span className="font-semibold text-slate-200">Always on Top</span>
-                    <p className="text-[10px] text-slate-400">Keep overlay floating above all full-screen windows & IDEs</p>
+                    <span className="font-semibold text-zinc-200">Always on Top</span>
+                    <p className="text-[10px] text-zinc-400">Keep overlay floating above all full-screen windows & IDEs</p>
                   </div>
                   <input
                     type="checkbox"
@@ -367,14 +371,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         (window as any).electronAPI.setAlwaysOnTop(e.target.checked);
                       }
                     }}
-                    className="w-4 h-4 accent-cyan-400 cursor-pointer"
+                    className="w-4 h-4 accent-white cursor-pointer"
                   />
                 </div>
 
-                <div className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/10">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-900 border border-white/10">
                   <div>
-                    <span className="font-semibold text-slate-200">Click-Through HUD Mode</span>
-                    <p className="text-[10px] text-slate-400">Allow mouse clicks to pass directly to applications beneath</p>
+                    <span className="font-semibold text-zinc-200">Click-Through HUD Mode</span>
+                    <p className="text-[10px] text-zinc-400">Allow mouse clicks to pass directly to applications beneath</p>
                   </div>
                   <input
                     type="checkbox"
@@ -385,30 +389,30 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         (window as any).electronAPI.setIgnoreMouseEvents(e.target.checked, { forward: true });
                       }
                     }}
-                    className="w-4 h-4 accent-cyan-400 cursor-pointer"
+                    className="w-4 h-4 accent-white cursor-pointer"
                   />
                 </div>
 
-                <div className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/10">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-900 border border-white/10">
                   <div>
-                    <span className="font-semibold text-slate-200">Auto-Solve on Screen Snip</span>
-                    <p className="text-[10px] text-slate-400">Instantly generate solution as soon as you crop an area</p>
+                    <span className="font-semibold text-zinc-200">Auto-Solve on Screen Snip</span>
+                    <p className="text-[10px] text-zinc-400">Instantly generate solution as soon as you crop an area</p>
                   </div>
                   <input
                     type="checkbox"
                     checked={settings.autoSolveSnips}
                     onChange={(e) => onUpdateSettings({ autoSolveSnips: e.target.checked })}
-                    className="w-4 h-4 accent-cyan-400 cursor-pointer"
+                    className="w-4 h-4 accent-white cursor-pointer"
                   />
                 </div>
 
                 {/* Audio Input Device Selector */}
-                <div className="p-3 rounded-lg bg-white/5 border border-white/10 space-y-2">
+                <div className="p-3 rounded-lg bg-zinc-900 border border-white/10 space-y-2">
                   <div className="flex items-center gap-2">
-                    <Mic className="w-4 h-4 text-cyan-400" />
+                    <Mic className="w-4 h-4 text-white" />
                     <div>
-                      <span className="font-semibold text-slate-200">Microphone & Earbuds Audio Input</span>
-                      <p className="text-[10px] text-slate-400">Choose which audio device (earbuds, USB mic, headset) feeds the AI Interview Ear</p>
+                      <span className="font-semibold text-zinc-200">Microphone & Earbuds Audio Input</span>
+                      <p className="text-[10px] text-zinc-400">Choose which audio device (earbuds, USB mic, headset) feeds the AI Interview Ear</p>
                     </div>
                   </div>
                   <select
@@ -418,7 +422,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       speechService.setSelectedDevice(e.target.value);
                       showSaveNotification();
                     }}
-                    className="w-full bg-slate-900 border border-white/10 rounded-lg p-2 text-cyan-300 text-xs focus:outline-none focus:border-cyan-400 font-mono"
+                    className="w-full bg-black border border-white/10 rounded-lg p-2 text-white text-xs focus:outline-none focus:border-white font-mono"
                   >
                     <option value="default">System Default Device</option>
                     {audioDevices
@@ -438,20 +442,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           {activeTab === 'prompts' && (
             <div className="space-y-4">
               <div>
-                <label className="block text-[11px] font-semibold text-slate-300 mb-1">Preferred Code Language</label>
+                <label className="block text-[11px] font-semibold text-zinc-300 mb-1">Preferred Code Language</label>
                 <select
                   value={settings.preferredLanguage}
                   onChange={(e) => onUpdateSettings({ preferredLanguage: e.target.value })}
-                  className="w-full bg-slate-900 border border-white/10 rounded-lg p-2 text-cyan-300 focus:outline-none"
+                  className="w-full bg-zinc-900 border border-white/10 rounded-lg p-2 text-white font-mono"
                 >
-                  {['Python', 'TypeScript', 'JavaScript', 'Java', 'C++', 'Go', 'Rust', 'C#', 'SQL', 'Swift'].map(lang => (
-                    <option key={lang} value={lang}>{lang}</option>
+                  {['Python', 'TypeScript', 'Java', 'C++', 'Go', 'Rust', 'JavaScript', 'SQL'].map(l => (
+                    <option key={l} value={l}>{l}</option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-slate-300 mb-2">System Persona Preset</label>
+                <label className="block text-[11px] font-semibold text-zinc-300 mb-1.5">Preset Reasoning Mode</label>
                 <div className="space-y-2">
                   {presets.map(p => (
                     <div
@@ -459,26 +463,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       onClick={() => onUpdateSettings({ promptPreset: p.id })}
                       className={`p-2.5 rounded-lg border cursor-pointer transition-all ${
                         settings.promptPreset === p.id
-                          ? 'bg-cyan-500/20 border-cyan-500/40 text-cyan-300 shadow-neon-cyan'
-                          : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
+                          ? 'bg-zinc-800 border-white text-white shadow'
+                          : 'bg-zinc-900/60 border-white/5 text-zinc-400 hover:bg-zinc-800'
                       }`}
                     >
-                      <div className="font-bold text-xs">{p.name}</div>
-                      <div className="text-[10px] text-slate-400 mt-0.5">{p.desc}</div>
+                      <div className="font-semibold text-xs text-white">{p.name}</div>
+                      <div className="text-[10px] text-zinc-400 mt-0.5">{p.desc}</div>
                     </div>
                   ))}
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-300 mb-1">Custom System Instructions (Optional)</label>
-                <textarea
-                  value={settings.customSystemPrompt}
-                  onChange={(e) => onUpdateSettings({ customSystemPrompt: e.target.value })}
-                  placeholder="Override default instructions (e.g. Always respond with concise bullets and emphasize space complexity)..."
-                  rows={3}
-                  className="w-full glass-input rounded-lg p-2 text-xs"
-                />
               </div>
             </div>
           )}
@@ -487,7 +480,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           {activeTab === 'appearance' && (
             <div className="space-y-4">
               <div>
-                <label className="block text-[11px] font-semibold text-slate-300 mb-2">Theme Aesthetic</label>
+                <label className="block text-[11px] font-semibold text-zinc-300 mb-1.5">Color Theme</label>
                 <div className="grid grid-cols-2 gap-2">
                   {themes.map(th => (
                     <button
@@ -495,70 +488,58 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       onClick={() => onUpdateSettings({ theme: th.id })}
                       className={`flex items-center gap-2 p-2.5 rounded-lg border text-left transition-all ${
                         settings.theme === th.id
-                          ? 'bg-white/15 border-cyan-400 text-white font-bold'
-                          : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
+                          ? 'bg-zinc-800 border-white text-white'
+                          : 'bg-zinc-900/60 border-white/5 text-zinc-400 hover:bg-zinc-800'
                       }`}
                     >
-                      <span className={`w-3 h-3 rounded-full ${th.color}`} />
-                      <span className="text-xs">{th.name}</span>
+                      <span className={`w-3 h-3 rounded-full ${th.color} shrink-0`} />
+                      <span className="text-xs font-medium text-white">{th.name}</span>
                     </button>
                   ))}
                 </div>
               </div>
 
               <div>
-                <div className="flex items-center justify-between text-[11px] mb-1">
-                  <span className="font-semibold text-slate-300">Default Opacity</span>
-                  <span className="font-mono text-cyan-400">{Math.round(settings.opacity * 100)}%</span>
+                <label className="block text-[11px] font-semibold text-zinc-300 mb-1">Text Font Size</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {(['xs', 'sm', 'base', 'lg'] as const).map(sz => (
+                    <button
+                      key={sz}
+                      onClick={() => onUpdateSettings({ fontSize: sz })}
+                      className={`py-1.5 rounded-lg border text-center font-mono text-xs uppercase ${
+                        settings.fontSize === sz
+                          ? 'bg-white text-black font-bold'
+                          : 'bg-zinc-900 border-white/10 text-zinc-400 hover:bg-zinc-800'
+                      }`}
+                    >
+                      {sz}
+                    </button>
+                  ))}
                 </div>
-                <input
-                  type="range"
-                  min="0.25"
-                  max="1.0"
-                  step="0.05"
-                  value={settings.opacity}
-                  onChange={(e) => onUpdateSettings({ opacity: parseFloat(e.target.value) })}
-                  className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-cyan-400"
-                />
               </div>
             </div>
           )}
 
           {/* TAB 5: HOTKEYS */}
           {activeTab === 'hotkeys' && (
-            <div className="space-y-2">
-              <p className="text-[11px] text-slate-400 mb-3">
-                Global hotkeys operate from any background application or full-screen window:
-              </p>
-
+            <div className="space-y-3 font-mono text-xs">
               {[
-                { key: 'Alt + Space / Ctrl + Shift + Space', desc: 'Toggle Show / Hide Overlay' },
-                { key: 'Ctrl + Shift + S', desc: 'Interactive Screen Region Snip & Solve' },
-                { key: 'Ctrl + Shift + F', desc: 'Instant Fullscreen Snap & Solve' },
-                { key: 'Ctrl + Shift + A', desc: 'Toggle Real-Time Audio Interview Ear' },
-                { key: 'Ctrl + Shift + H', desc: 'Emergency Panic / Boss Hide' },
-                { key: 'Ctrl + Shift + T', desc: 'Toggle Click-Through Pass-Through' },
-                { key: 'Ctrl + Shift + C', desc: 'Quick Copy Latest AI Solution' },
+                { key: 'Ctrl + Shift + S', desc: 'Snip Region of Screen to Solve' },
+                { key: 'Ctrl + Shift + F', desc: 'Full Screen Instant Capture' },
+                { key: 'Ctrl + Shift + A', desc: 'Toggle Real-Time AI Interview Ear' },
+                { key: 'Ctrl + Shift + V', desc: 'Paste Screenshot from Clipboard' },
+                { key: 'Ctrl + Shift + H', desc: 'Panic Hide / Boss Key (Instant vanish)' },
+                { key: 'Alt + Space', desc: 'Toggle Overlay Visibility' },
               ].map((hk, i) => (
-                <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/10">
-                  <span className="text-slate-300 text-xs">{hk.desc}</span>
-                  <kbd className="px-2 py-0.5 rounded bg-black/60 border border-white/20 text-cyan-300 font-mono text-[11px] shadow">
+                <div key={i} className="flex items-center justify-between p-2.5 rounded-lg bg-zinc-900 border border-white/10">
+                  <span className="text-zinc-300 text-[11px] font-sans">{hk.desc}</span>
+                  <span className="px-2 py-0.5 rounded bg-black border border-white/20 text-white text-[10px] font-bold">
                     {hk.key}
-                  </kbd>
+                  </span>
                 </div>
               ))}
             </div>
           )}
-        </div>
-
-        {/* Modal Footer */}
-        <div className="p-3 bg-slate-900/90 border-t border-white/10 flex justify-end">
-          <button
-            onClick={onClose}
-            className="px-4 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs transition-colors shadow-neon-cyan"
-          >
-            Done
-          </button>
         </div>
       </div>
     </div>

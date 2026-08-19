@@ -115,7 +115,7 @@ export class LLMClient {
 
     const contents: any[] = [];
 
-    // Prior history (limit to last 6 messages to stay snappy)
+    // Prior history (limit to last 6 messages)
     const recentHistory = history.slice(-6);
     for (const msg of recentHistory) {
       if (msg.role === 'user') {
@@ -123,8 +123,8 @@ export class LLMClient {
         if (msg.screenshot) {
           const cleanBase64 = msg.screenshot.replace(/^data:image\/\w+;base64,/, '');
           parts.push({
-            inline_data: {
-              mime_type: 'image/png',
+            inlineData: {
+              mimeType: 'image/png',
               data: cleanBase64
             }
           });
@@ -140,8 +140,8 @@ export class LLMClient {
     if (screenshot) {
       const cleanBase64 = screenshot.replace(/^data:image\/\w+;base64,/, '');
       currentParts.push({
-        inline_data: {
-          mime_type: 'image/png',
+        inlineData: {
+          mimeType: 'image/png',
           data: cleanBase64
         }
       });
@@ -149,27 +149,22 @@ export class LLMClient {
     currentParts.push({ text: prompt || 'Analyze this problem/code and provide the optimal solution.' });
     contents.push({ role: 'user', parts: currentParts });
 
-    // Build candidate list prioritizing user selection, then latest 2.5 and 1.5 versions
+    // Clean active candidate models (prioritize user choice, then free-tier models)
     const candidateModels: string[] = [];
     if (model) candidateModels.push(model);
-    if (!candidateModels.includes('gemini-2.5-flash')) candidateModels.push('gemini-2.5-flash');
-    if (!candidateModels.includes('gemini-2.5-pro')) candidateModels.push('gemini-2.5-pro');
-    if (!candidateModels.includes('gemini-1.5-flash-latest')) candidateModels.push('gemini-1.5-flash-latest');
+    if (!candidateModels.includes('gemini-2.0-flash')) candidateModels.push('gemini-2.0-flash');
+    if (!candidateModels.includes('gemini-2.0-flash-lite')) candidateModels.push('gemini-2.0-flash-lite');
     if (!candidateModels.includes('gemini-1.5-flash')) candidateModels.push('gemini-1.5-flash');
-    if (!candidateModels.includes('gemini-1.5-pro-latest')) candidateModels.push('gemini-1.5-pro-latest');
+    if (!candidateModels.includes('gemini-1.5-pro')) candidateModels.push('gemini-1.5-pro');
 
-    const body = {
+    const body: any = {
       contents,
-      system_instruction: {
+      systemInstruction: {
         parts: [{ text: systemPrompt }]
       },
       generationConfig: {
         temperature: this.settings.temperature ?? 0.2,
         maxOutputTokens: 4096,
-        // Disable internal chain-of-thought monologue from printing to the user output
-        thinkingConfig: {
-          thinkingBudget: 0
-        }
       }
     };
 
@@ -203,10 +198,31 @@ export class LLMClient {
       }
     }
 
-    // If all candidates failed, dynamically query ListModels to find valid active models
+    // If streaming endpoints failed, try standard generateContent
+    if (!response || !response.ok) {
+      for (const cand of candidateModels) {
+        try {
+          const syncEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${cand}:generateContent?key=${apiKey}`;
+          const syncRes = await fetch(syncEndpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          });
+          if (syncRes.ok) {
+            const data = await syncRes.json();
+            const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            if (text) {
+              onChunk?.(text);
+              return text.trim();
+            }
+          }
+        } catch (_) {}
+      }
+    }
+
+    // Dynamic discovery fallback if all candidate models failed
     if (!response || !response.ok) {
       try {
-        console.log('[Gemini] Querying ListModels to discover available models for this key...');
         const listRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
         if (listRes.ok) {
           const listData = await listRes.json();
@@ -214,7 +230,6 @@ export class LLMClient {
             .filter((m: any) => m.supportedGenerationMethods?.includes('generateContent'))
             .map((m: any) => m.name.replace('models/', ''));
 
-          console.log('[Gemini] Discovered models on API Key:', validModels);
           for (const vm of validModels) {
             const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${vm}:streamGenerateContent?alt=sse&key=${apiKey}`;
             const res = await fetch(endpoint, {
@@ -234,7 +249,7 @@ export class LLMClient {
     }
 
     if (!response || !response.ok) {
-      throw new Error(`Gemini API Error: ${lastErrorMsg || 'Could not find an available Gemini model for this API key.'}`);
+      throw new Error(`Gemini API Error: ${lastErrorMsg || 'Could not reach Gemini API. Please check your API key.'}`);
     }
 
     let fullText = '';

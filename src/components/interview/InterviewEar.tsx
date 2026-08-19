@@ -195,16 +195,16 @@ export const InterviewEar: React.FC<InterviewEarProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full bg-transparent overflow-hidden">
+    <div className="flex flex-col h-full bg-black overflow-hidden font-sans">
       {/* Ear Status & Control Bar */}
-      <div className="flex items-center justify-between px-3 py-2 bg-black/40 border-b border-white/5 text-xs">
+      <div className="flex items-center justify-between px-3 py-2 bg-zinc-950 border-b border-white/10 text-xs">
         <div className="flex items-center gap-2">
           <button
             onClick={toggleListening}
             className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all ${
               isListening
-                ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-neon-rose pulse-emerald-glow'
-                : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 hover:bg-cyan-500/30'
+                ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse'
+                : 'bg-white text-black border border-white hover:bg-zinc-200 font-bold'
             }`}
           >
             {isListening ? (
@@ -214,7 +214,7 @@ export const InterviewEar: React.FC<InterviewEarProps> = ({
               </>
             ) : (
               <>
-                <MicOff className="w-3.5 h-3.5" />
+                <MicOff className="w-3.5 h-3.5 text-black" />
                 <span>Start Ear (Ctrl+Shift+A)</span>
               </>
             )}
@@ -223,31 +223,31 @@ export const InterviewEar: React.FC<InterviewEarProps> = ({
           {/* Real Audio Waveform / VU Meter */}
           {isListening && (
             <>
-              <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-black/50 border border-white/10" title={`Mic Level: ${audioLevel}% (Noise baseline calibrated)`}>
+              <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-zinc-900 border border-white/10" title={`Mic Level: ${audioLevel}%`}>
                 <span 
-                  className="w-1 bg-cyan-400 rounded-full transition-all duration-75" 
+                  className="w-1 bg-white rounded-full transition-all duration-75" 
                   style={{ height: `${Math.max(4, Math.min(18, (audioLevel / 100) * 18))}px` }} 
                 />
                 <span 
-                  className="w-1 bg-cyan-300 rounded-full transition-all duration-75" 
+                  className="w-1 bg-zinc-300 rounded-full transition-all duration-75" 
                   style={{ height: `${Math.max(4, Math.min(22, (audioLevel / 80) * 22))}px` }} 
                 />
                 <span 
-                  className="w-1 bg-cyan-400 rounded-full transition-all duration-75" 
+                  className="w-1 bg-white rounded-full transition-all duration-75" 
                   style={{ height: `${Math.max(4, Math.min(18, (audioLevel / 100) * 18))}px` }} 
                 />
-                <span className="text-[10px] font-mono text-cyan-300 ml-1">
+                <span className="text-[10px] font-mono text-zinc-300 ml-1">
                   {audioLevel > 5 ? `${audioLevel}%` : 'Silent'}
                 </span>
               </div>
 
               <button
                 onClick={() => speechService.flushAndTranscribe()}
-                className="px-2 py-0.5 rounded-full bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 text-[10px] font-bold flex items-center gap-1 transition-colors"
-                title="Immediately transcribe what was just said without waiting for silence"
+                className="px-2 py-0.5 rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/20 text-[10px] font-bold flex items-center gap-1 transition-colors"
+                title="Immediately transcribe what was just said"
               >
                 <Sparkles className="w-2.5 h-2.5" />
-                <span>Transcribe Now</span>
+                <span>Transcribe</span>
               </button>
             </>
           )}
@@ -256,14 +256,14 @@ export const InterviewEar: React.FC<InterviewEarProps> = ({
         <div className="flex items-center gap-2">
           {/* Audio Device Selector */}
           <div className="flex items-center gap-1">
-            <Mic className="w-3 h-3 text-slate-400 shrink-0" />
+            <Mic className="w-3 h-3 text-zinc-400 shrink-0" />
             <select
               value={selectedDevice}
               onChange={(e) => handleDeviceChange(e.target.value)}
-              className="bg-black/50 border border-white/10 text-slate-200 text-[10px] rounded px-1 py-0.5 focus:outline-none focus:border-cyan-400 max-w-[120px] truncate"
+              className="bg-zinc-900 border border-white/10 text-zinc-200 text-[10px] rounded px-1.5 py-0.5 focus:outline-none focus:border-white max-w-[120px] truncate font-mono"
               title="Select audio input device (earbuds, external mic, etc.)"
             >
-              <option value="default">System Default</option>
+              <option value="default">Default Mic</option>
               {audioDevices
                 .filter(d => d.deviceId !== 'default' && d.deviceId !== 'communications')
                 .map(d => (
@@ -275,20 +275,20 @@ export const InterviewEar: React.FC<InterviewEarProps> = ({
           </div>
 
           {/* Audio Source Mode Switcher */}
-          <div className="flex items-center gap-0.5 bg-black/40 border border-white/10 rounded-lg p-0.5 text-[10px]">
+          <div className="flex items-center gap-0.5 bg-zinc-900 border border-white/10 rounded-lg p-0.5 text-[10px]">
             <button
               onClick={() => handleModeChange('dual')}
               className={`px-1.5 py-0.5 rounded font-semibold transition-colors ${
-                captureMode === 'dual' ? 'bg-cyan-500/30 text-cyan-300' : 'text-slate-400 hover:text-slate-200'
+                captureMode === 'dual' ? 'bg-white text-black' : 'text-zinc-400 hover:text-white'
               }`}
-              title="Dual Mix: Listens to both your Microphone AND Interviewer Earphone/Speaker audio"
+              title="Dual Mix: Listens to both your Microphone AND Interviewer Earphone audio"
             >
-              Dual Mix
+              Dual
             </button>
             <button
               onClick={() => handleModeChange('mic')}
               className={`px-1.5 py-0.5 rounded font-semibold transition-colors ${
-                captureMode === 'mic' ? 'bg-cyan-500/30 text-cyan-300' : 'text-slate-400 hover:text-slate-200'
+                captureMode === 'mic' ? 'bg-white text-black' : 'text-zinc-400 hover:text-white'
               }`}
               title="Microphone Only"
             >
@@ -297,7 +297,7 @@ export const InterviewEar: React.FC<InterviewEarProps> = ({
             <button
               onClick={() => handleModeChange('system')}
               className={`px-1.5 py-0.5 rounded font-semibold transition-colors ${
-                captureMode === 'system' ? 'bg-cyan-500/30 text-cyan-300' : 'text-slate-400 hover:text-slate-200'
+                captureMode === 'system' ? 'bg-white text-black' : 'text-zinc-400 hover:text-white'
               }`}
               title="Earphones / System Audio Only"
             >
@@ -307,7 +307,7 @@ export const InterviewEar: React.FC<InterviewEarProps> = ({
 
           <button
             onClick={() => setTranscripts([])}
-            className="p-1 hover:bg-white/10 rounded text-slate-400 hover:text-rose-400 transition-colors"
+            className="p-1 hover:bg-white/10 rounded text-zinc-400 hover:text-rose-400 transition-colors"
             title="Clear Audio Transcripts"
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -318,14 +318,14 @@ export const InterviewEar: React.FC<InterviewEarProps> = ({
       {/* Transcript & Answers Feed */}
       <div className="flex-1 overflow-y-auto p-3 space-y-4">
         {transcripts.length === 0 && !interimText && (
-          <div className="flex flex-col items-center justify-center h-full text-center p-6 text-slate-400 space-y-3">
-            <div className="p-4 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
+          <div className="flex flex-col items-center justify-center h-full text-center p-6 text-zinc-400 space-y-3">
+            <div className="p-4 rounded-full bg-white/5 border border-white/10 text-zinc-300">
               <Radio className="w-8 h-8 animate-pulse" />
             </div>
             <div>
-              <h4 className="font-semibold text-slate-200 text-sm">Real-time Interview Ear Ready</h4>
-              <p className="text-xs text-slate-400 mt-1 max-w-xs leading-relaxed">
-                Click <strong>Start Ear</strong> or press <code className="text-cyan-300">Ctrl+Shift+A</code>. Nexora will capture speaker audio from your mic, transcribe questions via Whisper, and generate answers automatically.
+              <h4 className="font-semibold text-white text-sm">Real-time Interview Ear Ready</h4>
+              <p className="text-xs text-zinc-400 mt-1 max-w-xs leading-relaxed">
+                Click <strong>Start Ear</strong> or press <code className="text-white bg-white/10 px-1 py-0.5 rounded">Ctrl+Shift+A</code>. Nexora will capture speaker & mic audio, transcribe questions, and synthesize answers automatically.
               </p>
             </div>
           </div>
@@ -334,16 +334,16 @@ export const InterviewEar: React.FC<InterviewEarProps> = ({
         {transcripts.map((t) => (
           <div key={t.id} className="space-y-2 group">
             {/* Spoken Query Card */}
-            <div className="flex items-start justify-between p-2.5 rounded-lg bg-slate-900/70 border border-white/10 text-xs text-slate-200">
+            <div className="flex items-start justify-between p-2.5 rounded-lg bg-zinc-900/90 border border-white/10 text-xs text-zinc-200">
               <div className="flex items-start gap-2">
-                <Volume2 className="w-3.5 h-3.5 text-cyan-400 shrink-0 mt-0.5" />
+                <Volume2 className="w-3.5 h-3.5 text-zinc-400 shrink-0 mt-0.5" />
                 <span className="font-mono">{t.text}</span>
               </div>
 
               {!t.aiResponse && !t.isGenerating && (
                 <button
                   onClick={() => generateAnswerForTranscript(t.id, t.text)}
-                  className="flex items-center gap-1 px-2 py-0.5 rounded bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 font-medium text-[11px] shrink-0 border border-cyan-500/30 transition-colors ml-2"
+                  className="flex items-center gap-1 px-2.5 py-1 rounded bg-white text-black font-bold text-[11px] shrink-0 hover:bg-zinc-200 transition-colors ml-2 shadow"
                 >
                   <Sparkles className="w-3 h-3" />
                   <span>Answer</span>
@@ -353,16 +353,16 @@ export const InterviewEar: React.FC<InterviewEarProps> = ({
 
             {/* AI Suggested Response Card */}
             {(t.aiResponse || t.isGenerating) && (
-              <div className="pl-3 border-l-2 border-cyan-500/40 space-y-1">
-                <div className="flex items-center justify-between text-[10px] text-cyan-400 font-mono">
+              <div className="pl-3 border-l-2 border-white/30 space-y-1">
+                <div className="flex items-center justify-between text-[10px] text-zinc-400 font-mono">
                   <div className="flex items-center gap-1">
-                    <Bot className="w-3 h-3" />
+                    <Bot className="w-3 h-3 text-white" />
                     <span>Suggested Response:</span>
                   </div>
                   {t.aiResponse && (
                     <button
                       onClick={() => handleCopy(t.id, t.aiResponse || '')}
-                      className="p-1 rounded hover:bg-white/10 text-slate-400 hover:text-emerald-400 transition-colors flex items-center gap-1"
+                      className="p-1 rounded hover:bg-white/10 text-zinc-400 hover:text-emerald-400 transition-colors flex items-center gap-1"
                       title="Copy response"
                     >
                       {copiedId === t.id ? (
@@ -380,7 +380,7 @@ export const InterviewEar: React.FC<InterviewEarProps> = ({
                   )}
                 </div>
 
-                <div className="glass-panel p-3 rounded-lg text-xs">
+                <div className="bg-zinc-900/90 border border-white/10 p-3 rounded-lg text-xs text-zinc-100">
                   <MarkdownRenderer
                     content={t.aiResponse || 'Synthesizing optimal response...'}
                     isStreaming={t.isGenerating}
@@ -393,8 +393,8 @@ export const InterviewEar: React.FC<InterviewEarProps> = ({
 
         {/* Live Interim Speech Bubble */}
         {interimText && (
-          <div className="p-2 rounded-lg bg-cyan-950/40 border border-cyan-500/20 text-xs text-cyan-200/80 italic flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping shrink-0" />
+          <div className="p-2 rounded-lg bg-zinc-900 border border-white/20 text-xs text-zinc-300 italic flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-white animate-ping shrink-0" />
             <span className="truncate">{interimText}...</span>
           </div>
         )}

@@ -78,29 +78,29 @@ export const Header: React.FC<HeaderProps> = ({
   ];
 
   return (
-    <header className="flex flex-col bg-slate-950/80 border-b border-white/10 backdrop-blur-2xl select-none relative z-30">
+    <header className="flex flex-col bg-black border-b border-white/10 select-none relative z-30 font-sans">
       {/* Top Window Bar with Drag Handle */}
       <div className="flex items-center justify-between px-3 py-2 app-drag-region">
         {/* Logo & Stealth Status */}
         <div className="flex items-center gap-2 app-no-drag">
-          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
-            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/10 border border-white/20 text-white">
+            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
             <span className="text-xs font-black tracking-wider uppercase font-mono">NEXORA</span>
           </div>
 
           {/* Anti-Screenshare Status Pill */}
           <div 
-            className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-[10px] font-medium cursor-help"
+            className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-zinc-900 border border-white/10 text-zinc-300 text-[10px] font-medium cursor-help"
             title="Screenshare Protected: Window is invisible to Zoom, Google Meet, Teams, Discord & OBS screen capture"
           >
-            <ShieldCheck className="w-3 h-3 text-emerald-400" />
+            <ShieldCheck className="w-3 h-3 text-white" />
             <span className="hidden sm:inline">Stealth Safe</span>
           </div>
 
           {/* Live Audio Indicator */}
           {isListening && (
-            <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-400 text-[10px] animate-pulse">
-              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+            <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-300 text-[10px] animate-pulse">
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
               <span>Ear Active</span>
             </div>
           )}
@@ -112,7 +112,7 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="relative">
             <button
               onClick={() => setShowOpacitySlider(!showOpacitySlider)}
-              className={`p-1.5 rounded-md hover:bg-white/10 text-slate-400 hover:text-cyan-300 transition-colors text-xs flex items-center gap-0.5 ${showOpacitySlider ? 'bg-white/10 text-cyan-400' : ''}`}
+              className={`p-1.5 rounded-md hover:bg-white/10 text-zinc-400 hover:text-white transition-colors text-xs flex items-center gap-0.5 ${showOpacitySlider ? 'bg-white/15 text-white' : ''}`}
               title="Adjust Transparency"
             >
               <Sliders className="w-3.5 h-3.5" />
@@ -120,10 +120,10 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
 
             {showOpacitySlider && (
-              <div className="absolute right-0 top-8 bg-slate-900/95 border border-white/15 p-2 rounded-lg shadow-2xl backdrop-blur-xl z-50 w-36 flex flex-col gap-1.5">
-                <div className="flex justify-between text-[10px] text-slate-400">
+              <div className="absolute right-0 top-8 bg-zinc-950 border border-white/20 p-2.5 rounded-lg shadow-2xl backdrop-blur-xl z-50 w-36 flex flex-col gap-1.5">
+                <div className="flex justify-between text-[10px] text-zinc-400">
                   <span>Ghost</span>
-                  <span className="font-mono text-cyan-400">{Math.round(settings.opacity * 100)}%</span>
+                  <span className="font-mono text-white font-bold">{Math.round(settings.opacity * 100)}%</span>
                   <span>Solid</span>
                 </div>
                 <input
@@ -133,7 +133,7 @@ export const Header: React.FC<HeaderProps> = ({
                   step="0.05"
                   value={settings.opacity}
                   onChange={(e) => onUpdateSettings({ opacity: parseFloat(e.target.value) })}
-                  className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-cyan-400"
+                  className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-white"
                 />
               </div>
             )}
@@ -142,7 +142,7 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Click-Through HUD Mode */}
           <button
             onClick={handleToggleClickThrough}
-            className={`p-1.5 rounded-md transition-colors text-xs ${settings.clickThroughEnabled ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40' : 'hover:bg-white/10 text-slate-400 hover:text-white'}`}
+            className={`p-1.5 rounded-md transition-colors text-xs ${settings.clickThroughEnabled ? 'bg-white text-black border border-white font-bold' : 'hover:bg-white/10 text-zinc-400 hover:text-white'}`}
             title={settings.clickThroughEnabled ? "Click-Through Active (Pass clicks through)" : "Enable Click-Through HUD"}
           >
             <MousePointer className="w-3.5 h-3.5" />
@@ -151,7 +151,7 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Boss Key Panic Hide */}
           <button
             onClick={handleBossHide}
-            className="p-1.5 rounded-md hover:bg-white/10 text-slate-400 hover:text-amber-400 transition-colors"
+            className="p-1.5 rounded-md hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
             title="Panic Boss Hide (Ctrl+Shift+H / Alt+Space)"
           >
             <EyeOff className="w-3.5 h-3.5" />
@@ -160,7 +160,7 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Resume & Personal Knowledge Base RAG */}
           <button
             onClick={onOpenKnowledgeBase}
-            className="p-1.5 rounded-md hover:bg-white/10 text-slate-400 hover:text-cyan-300 transition-colors relative"
+            className="p-1.5 rounded-md hover:bg-white/10 text-zinc-400 hover:text-white transition-colors relative"
             title="Personal Resume & Knowledge Base RAG"
           >
             <FileCode className="w-3.5 h-3.5" />
@@ -169,7 +169,7 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Second-Screen Mobile Companion */}
           <button
             onClick={onOpenCompanion}
-            className="p-1.5 rounded-md hover:bg-white/10 text-slate-400 hover:text-cyan-300 transition-colors"
+            className="p-1.5 rounded-md hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
             title="Second-Screen Mobile Companion (QR Sync)"
           >
             <Radio className="w-3.5 h-3.5" />
@@ -178,7 +178,7 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Cheat Sheet & DSA Patterns */}
           <button
             onClick={onOpenCheatSheet}
-            className="p-1.5 rounded-md hover:bg-white/10 text-slate-400 hover:text-cyan-300 transition-colors"
+            className="p-1.5 rounded-md hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
             title="Interview Cheat Sheets & DSA Patterns"
           >
             <BookOpen className="w-3.5 h-3.5" />
@@ -187,7 +187,7 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Settings Modal */}
           <button
             onClick={onOpenSettings}
-            className="p-1.5 rounded-md hover:bg-white/10 text-slate-400 hover:text-cyan-400 transition-colors"
+            className="p-1.5 rounded-md hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
             title="Settings & API Keys"
           >
             <Settings className="w-3.5 h-3.5" />
@@ -198,7 +198,7 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Minimize / Pill Mode */}
           <button
             onClick={handleMinimize}
-            className="p-1.5 rounded-md hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+            className="p-1.5 rounded-md hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
             title="Minimize to Pill"
           >
             <Minus className="w-3.5 h-3.5" />
@@ -207,7 +207,7 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Close */}
           <button
             onClick={handleClose}
-            className="p-1.5 rounded-md hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition-colors"
+            className="p-1.5 rounded-md hover:bg-rose-500/20 text-zinc-400 hover:text-rose-400 transition-colors"
             title="Close Nexora"
           >
             <X className="w-3.5 h-3.5" />
@@ -223,10 +223,10 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               key={m.id}
               onClick={() => onUpdateSettings({ mode: m.id })}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all duration-150 whitespace-nowrap ${
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium transition-all duration-150 whitespace-nowrap ${
                 isActive
-                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-neon-cyan'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-white/5 border border-transparent'
+                  ? 'bg-white text-black font-bold shadow-md'
+                  : 'text-zinc-400 hover:text-white hover:bg-white/10 border border-transparent'
               }`}
             >
               {m.icon}

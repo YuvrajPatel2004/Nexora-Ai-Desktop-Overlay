@@ -1,44 +1,61 @@
 import { AppSettings, ModelInfo } from '../../types';
 
 export const AVAILABLE_MODELS: ModelInfo[] = [
-  // Google Gemini
+  // Google Gemini (Free-tier friendly)
   {
-    id: 'gemini-2.5-flash',
-    name: 'Gemini 2.5 Flash',
+    id: 'gemini-2.0-flash',
+    name: 'Gemini 2.0 Flash (Default / Free)',
     provider: 'gemini',
     contextWindow: '1M tokens',
     isVision: true,
     isFast: true,
     recommended: true,
-    description: 'Latest flagship multimodal model with ultra-fast screen reasoning'
+    description: 'Google flagship multimodal model. Ultra-fast, high free-tier limits (15 RPM, 1M TPM)'
   },
   {
-    id: 'gemini-2.5-pro',
-    name: 'Gemini 2.5 Pro',
-    provider: 'gemini',
-    contextWindow: '2M tokens',
-    isVision: true,
-    isFast: false,
-    recommended: true,
-    description: 'Deep reasoning model for competitive programming & architecture'
-  },
-  {
-    id: 'gemini-1.5-flash-latest',
-    name: 'Gemini 1.5 Flash',
+    id: 'gemini-2.0-flash-lite',
+    name: 'Gemini 2.0 Flash Lite (Ultra Fast / Free)',
     provider: 'gemini',
     contextWindow: '1M tokens',
     isVision: true,
     isFast: true,
-    description: 'High throughput, low-latency visual analysis'
+    description: 'Lightweight low-latency model optimized for instant response delivery'
   },
   {
-    id: 'gemini-1.5-pro-latest',
-    name: 'Gemini 1.5 Pro',
+    id: 'gemini-1.5-flash',
+    name: 'Gemini 1.5 Flash (Stable / Free)',
+    provider: 'gemini',
+    contextWindow: '1M tokens',
+    isVision: true,
+    isFast: true,
+    description: 'Rock-solid stable multimodal model with 1M token context window'
+  },
+  {
+    id: 'gemini-1.5-pro',
+    name: 'Gemini 1.5 Pro (Deep Reasoning / Free)',
     provider: 'gemini',
     contextWindow: '2M tokens',
     isVision: true,
     isFast: false,
-    description: 'Ultra-large context for full codebase analysis & deep architecture'
+    description: 'Deep multi-step reasoning with 2M token context for architecture & complex DSA'
+  },
+  {
+    id: 'gemini-2.0-flash-thinking-exp-01-21',
+    name: 'Gemini 2.0 Flash Thinking (Experimental)',
+    provider: 'gemini',
+    contextWindow: '1M tokens',
+    isVision: true,
+    isFast: false,
+    description: 'Reasoning model that thinks through code and algorithm proofs before responding'
+  },
+  {
+    id: 'gemini-2.0-pro-exp-02-05',
+    name: 'Gemini 2.0 Pro (Experimental)',
+    provider: 'gemini',
+    contextWindow: '2M tokens',
+    isVision: true,
+    isFast: false,
+    description: 'Google premier coding and competitive programming model'
   },
 
   // OpenAI
@@ -172,23 +189,22 @@ export const AVAILABLE_MODELS: ModelInfo[] = [
   }
 ];
 
-const DEFAULT_SETTINGS: AppSettings = {
+export const DEFAULT_SETTINGS: AppSettings = {
   apiKeys: {
     gemini: '',
     openai: '',
     anthropic: '',
     groq: '',
     deepseek: '',
-    custom: '',
   },
   selectedProvider: 'gemini',
-  selectedModel: 'gemini-2.5-flash',
+  selectedModel: 'gemini-2.0-flash',
   ollamaEndpoint: 'http://localhost:11434',
-  ollamaModel: 'llama3.2-vision:latest',
-  customEndpoint: 'https://api.openai.com/v1',
-  customModel: 'gpt-4o',
+  ollamaModel: 'llama3:latest',
+  customEndpoint: '',
+  customModel: '',
   
-  opacity: 0.94,
+  opacity: 0.95,
   fontSize: 'sm',
   theme: 'cyber-stealth',
   mode: 'copilot',
@@ -196,7 +212,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   contentProtectionEnabled: true,
   clickThroughEnabled: false,
   alwaysOnTop: true,
-  hideFromTaskbar: true,
+  hideFromTaskbar: false,
   
   promptPreset: 'coding',
   customSystemPrompt: '',
@@ -217,7 +233,13 @@ export function getStoredSettings(): AppSettings {
     
     // Auto-fix deprecated/not-found model names
     let selModel = parsed.selectedModel || DEFAULT_SETTINGS.selectedModel;
-    if (selModel === 'gemini-2.5-flash' || selModel === 'gemini-1.5-pro') {
+    if (
+      selModel === 'gemini-2.5-flash' || 
+      selModel === 'gemini-2.5-pro' || 
+      selModel === 'gemini-1.5-flash-latest' || 
+      selModel === 'gemini-1.5-pro-latest' ||
+      !selModel
+    ) {
       selModel = 'gemini-2.0-flash';
     }
 

@@ -173,7 +173,7 @@ export class SpeechService {
           this.micStream = await navigator.mediaDevices.getUserMedia(micConstraints);
           const micSource = this.audioContext.createMediaStreamSource(this.micStream);
           const micGain = this.audioContext.createGain();
-          micGain.gain.value = 1.2; // Slightly boost mic
+          micGain.gain.value = 2.5; // Boost mic input for earbuds & quiet mics
           micSource.connect(micGain);
           micGain.connect(this.mixerGain);
           
@@ -194,7 +194,7 @@ export class SpeechService {
               });
               const micSource = this.audioContext!.createMediaStreamSource(this.micStream);
               const micGain = this.audioContext!.createGain();
-              micGain.gain.value = 1.2;
+              micGain.gain.value = 2.5;
               micSource.connect(micGain);
               micGain.connect(this.mixerGain!);
               console.log(`[SpeechService] Fallback mic captured: ${this.micStream.getAudioTracks()[0]?.label || 'unknown device'}`);
@@ -208,18 +208,16 @@ export class SpeechService {
       // 2. Capture System Loopback Audio (Interviewer voice through earphones/speakers)
       if (this.captureMode === 'dual' || this.captureMode === 'system') {
         try {
-          // In Electron with desktopCapturer or getDisplayMedia
           if (navigator.mediaDevices.getDisplayMedia) {
             this.systemStream = await navigator.mediaDevices.getDisplayMedia({
               video: true,
               audio: true
             });
 
-            // If audio track is present in display media
             if (this.systemStream.getAudioTracks().length > 0) {
               const systemSource = this.audioContext.createMediaStreamSource(this.systemStream);
               const systemGain = this.audioContext.createGain();
-              systemGain.gain.value = 1.4; // Boost interviewer volume
+              systemGain.gain.value = 2.0; // Boost earphone volume
               systemSource.connect(systemGain);
               systemGain.connect(this.mixerGain);
             }
@@ -281,28 +279,28 @@ export class SpeechService {
       this.callbacks?.onAudioLevel?.(currentLevel);
 
       // Calibrate ambient noise floor
-      if (currentLevel < 35) {
-        this.noiseFloor = this.noiseFloor * 0.96 + currentLevel * 0.04;
+      if (currentLevel < 20) {
+        this.noiseFloor = this.noiseFloor * 0.95 + currentLevel * 0.05;
       }
 
-      // Dynamic speech threshold
-      const speechThreshold = Math.max(38, Math.round(this.noiseFloor + 15));
+      // Responsive dynamic speech threshold (detects soft earbud speech)
+      const speechThreshold = Math.max(8, Math.round(this.noiseFloor + 4));
       const now = Date.now();
 
       if (currentLevel >= speechThreshold) {
-        // Voice detected (either from mic or interviewer in earphones)
+        // Voice detected (either from mic, earbuds, or system loopback)
         this.lastSpokenTime = now;
         if (!this.hasDetectedSpeech) {
           this.hasDetectedSpeech = true;
           this.speechStartTime = now;
           this.callbacks?.onInterimText('Listening to question...');
-        } else if (now - this.speechStartTime > 6500) {
-          // Continuous talking guard: auto-flush after 6.5s
+        } else if (now - this.speechStartTime > 4500) {
+          // Continuous talking guard: auto-flush after 4.5s
           this.speechStartTime = now;
           this.flushAndTranscribe();
         }
-      } else if (this.hasDetectedSpeech && (now - this.lastSpokenTime > 750)) {
-        // Silence detected for 750ms after speech -> auto-transcribe!
+      } else if (this.hasDetectedSpeech && (now - this.lastSpokenTime > 550)) {
+        // Silence detected for 550ms after speech -> auto-transcribe!
         this.hasDetectedSpeech = false;
         this.flushAndTranscribe();
       }

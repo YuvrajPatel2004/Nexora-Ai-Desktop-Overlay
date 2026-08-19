@@ -251,24 +251,24 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
   ];
 
   return (
-    <div className="flex flex-col h-full bg-transparent overflow-hidden">
+    <div className="flex flex-col h-full bg-black overflow-hidden font-sans">
       {/* Model & Preset Badge Strip */}
-      <div className="flex items-center justify-between px-3 py-1.5 bg-black/40 border-b border-white/5 text-[11px] text-slate-400">
+      <div className="flex items-center justify-between px-3 py-1.5 bg-zinc-950 border-b border-white/10 text-[11px] text-zinc-400">
         <div className="flex items-center gap-1.5">
-          <Cpu className="w-3.5 h-3.5 text-cyan-400" />
-          <span className="font-medium text-slate-200">{currentModelInfo.name}</span>
-          <span className="text-[10px] px-1.5 py-0.2 rounded bg-white/10 text-cyan-300 uppercase font-mono">
+          <Cpu className="w-3.5 h-3.5 text-zinc-300" />
+          <span className="font-medium text-white">{currentModelInfo.name}</span>
+          <span className="text-[10px] px-1.5 py-0.2 rounded bg-white/10 text-zinc-200 uppercase font-mono">
             {settings.selectedProvider}
           </span>
         </div>
         
         <div className="flex items-center gap-2">
-          <span className="text-slate-500 font-mono text-[10px]">
-            Lang: <strong className="text-slate-300">{settings.preferredLanguage}</strong>
+          <span className="text-zinc-500 font-mono text-[10px]">
+            Lang: <strong className="text-zinc-300">{settings.preferredLanguage}</strong>
           </span>
           <button
             onClick={() => setMessages([])}
-            className="p-1 hover:bg-white/10 rounded text-slate-400 hover:text-rose-400 transition-colors"
+            className="p-1 hover:bg-white/10 rounded text-zinc-400 hover:text-rose-400 transition-colors"
             title="Clear Chat History"
           >
             <Trash2 className="w-3 h-3" />
@@ -286,12 +286,12 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
               className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} group`}
             >
               {/* Message Header / Timestamp */}
-              <div className="flex items-center gap-2 mb-1 px-1 text-[10px] text-slate-400">
-                <span className="font-semibold text-slate-300">
+              <div className="flex items-center gap-2 mb-1 px-1 text-[10px] text-zinc-400">
+                <span className="font-semibold text-zinc-300">
                   {isUser ? 'You' : 'Nexora AI'}
                 </span>
                 {msg.metrics?.latencyMs && (
-                  <span className="flex items-center gap-0.5 text-cyan-400 font-mono">
+                  <span className="flex items-center gap-0.5 text-zinc-400 font-mono">
                     <Clock className="w-2.5 h-2.5" />
                     {(msg.metrics.latencyMs / 1000).toFixed(2)}s
                   </span>
@@ -299,7 +299,7 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
                 {!isUser && !msg.isStreaming && (
                   <button
                     onClick={() => handleCopyMessage(msg)}
-                    className="px-2 py-0.5 rounded-md bg-white/10 hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-300 border border-white/10 transition-all flex items-center gap-1 text-[10px] font-medium"
+                    className="px-2 py-0.5 rounded-md bg-white/10 hover:bg-white/20 text-zinc-300 hover:text-white border border-white/10 transition-all flex items-center gap-1 text-[10px] font-medium"
                     title="Copy full response to clipboard"
                   >
                     {copiedId === msg.id ? (
@@ -309,7 +309,7 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
                       </>
                     ) : (
                       <>
-                        <Copy className="w-3 h-3 text-cyan-400" />
+                        <Copy className="w-3 h-3 text-zinc-300" />
                         <span>Copy Answer</span>
                       </>
                     )}
@@ -319,10 +319,10 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
 
               {/* Message Bubble */}
               <div
-                className={`p-3 rounded-xl max-w-[92%] border transition-all ${
+                className={`p-3.5 rounded-xl max-w-[92%] border transition-all ${
                   isUser
-                    ? 'bg-cyan-950/50 border-cyan-500/30 text-slate-100'
-                    : 'glass-panel text-slate-100'
+                    ? 'bg-zinc-800 border-zinc-700 text-white'
+                    : 'bg-zinc-900/90 border-white/10 text-zinc-100'
                 }`}
               >
                 {/* Attached Screenshot preview */}
@@ -346,13 +346,13 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
       </div>
 
       {/* Quick Prompts Bar */}
-      <div className="flex items-center gap-1.5 px-3 py-1 overflow-x-auto no-scrollbar border-t border-white/5 bg-black/20">
+      <div className="flex items-center gap-1.5 px-3 py-1 overflow-x-auto no-scrollbar border-t border-white/10 bg-zinc-950">
         {quickPrompts.map((qp, idx) => (
           <button
             key={idx}
             onClick={() => handleSend(qp.prompt)}
             disabled={isGenerating}
-            className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-cyan-300 text-[11px] whitespace-nowrap transition-colors disabled:opacity-50"
+            className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-zinc-900 hover:bg-zinc-800 border border-white/10 text-zinc-300 hover:text-white text-[11px] whitespace-nowrap transition-colors disabled:opacity-50"
           >
             <span>{qp.label}</span>
           </button>
@@ -361,14 +361,14 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
 
       {/* Screenshot attachment preview badge */}
       {attachedImage && (
-        <div className="flex items-center justify-between mx-3 mt-2 px-2.5 py-1.5 rounded-lg bg-cyan-950/60 border border-cyan-500/40 text-xs">
+        <div className="flex items-center justify-between mx-3 mt-2 px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-white/20 text-xs">
           <div className="flex items-center gap-2 truncate">
-            <ImageIcon className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-            <span className="text-cyan-200 truncate font-mono text-[11px]">Clipboard / Snip Image attached</span>
+            <ImageIcon className="w-3.5 h-3.5 text-zinc-300 shrink-0" />
+            <span className="text-zinc-200 truncate font-mono text-[11px]">Clipboard / Snip Image attached</span>
           </div>
           <button
             onClick={() => setAttachedImage(null)}
-            className="p-0.5 rounded hover:bg-white/10 text-slate-400 hover:text-rose-400"
+            className="p-0.5 rounded hover:bg-white/10 text-zinc-400 hover:text-rose-400"
           >
             <X className="w-3 h-3" />
           </button>
@@ -376,12 +376,12 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
       )}
 
       {/* Input Form */}
-      <div className="p-3 pt-2 bg-slate-950/90 border-t border-white/10">
-        <div className="relative flex items-center glass-input rounded-xl overflow-hidden focus-within:border-cyan-400 transition-all">
+      <div className="p-3 pt-2 bg-black border-t border-white/10">
+        <div className="relative flex items-center bg-zinc-900/90 border border-white/15 rounded-xl overflow-hidden focus-within:border-white/40 transition-all">
           {/* Snip screen button */}
           <button
             onClick={onTriggerSnip}
-            className="p-2.5 text-slate-400 hover:text-cyan-400 hover:bg-white/5 transition-colors"
+            className="p-2.5 text-zinc-400 hover:text-white hover:bg-white/5 transition-colors"
             title="Snip Screen Area (Ctrl+Shift+S / F10)"
           >
             <Crop className="w-4 h-4" />
@@ -390,7 +390,7 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
           {/* Direct Clipboard Paste button */}
           <button
             onClick={handlePasteFromClipboard}
-            className="p-2.5 text-slate-400 hover:text-cyan-400 hover:bg-white/5 transition-colors"
+            className="p-2.5 text-zinc-400 hover:text-white hover:bg-white/5 transition-colors"
             title="Paste Image / Text from Clipboard (Ctrl+Shift+V / Alt+P / F6)"
           >
             <ImageIcon className="w-4 h-4" />
@@ -408,17 +408,17 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
                 : `Enter your ${settings.selectedProvider.toUpperCase()} API key in Settings (⚙️)...`
             }
             rows={1}
-            className="flex-1 bg-transparent py-2.5 px-2 text-xs sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none resize-none max-h-32"
+            className="flex-1 bg-transparent py-2.5 px-2 text-xs sm:text-sm text-white placeholder-zinc-500 focus:outline-none resize-none max-h-32"
           />
 
           {/* Send button */}
           <button
             onClick={() => handleSend()}
             disabled={isGenerating || (!inputText.trim() && !attachedImage)}
-            className="p-2.5 mr-1 rounded-lg text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10 disabled:opacity-40 disabled:hover:bg-transparent transition-all"
+            className="p-2 mr-1.5 rounded-lg bg-white text-black hover:bg-zinc-200 disabled:opacity-30 disabled:hover:bg-white transition-all font-bold"
             title="Send Message (Enter)"
           >
-            <Send className="w-4 h-4" />
+            <Send className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
